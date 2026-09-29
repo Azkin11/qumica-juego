@@ -3,83 +3,662 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Firewall Periódico - Z_eff</title>
+    <title>Firewall Periódico - Escape Room 2D</title>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --panel-bg: #1e293b;
+            --bg-color: #090d16;
+            --panel-bg: #111827;
             --accent: #10b981;
-            --accent-hover: #059669;
-            --text-main: #f8fafc;
-            --text-muted: #94a3b8;
-            --error: #ef4444;
+            --accent-glow: rgba(16, 185, 129, 0.4);
+            --primary: #38bdf8;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --danger: #ef4444;
         }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
         body {
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
-            margin: 0;
-            padding: 20px;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
+            overflow: hidden;
         }
-        .game-container {
-            background-color: var(--panel-bg);
+
+        #game-wrapper {
+            position: relative;
+            width: 800px;
+            max-width: 100vw;
+            height: 600px;
+            max-height: 100vh;
+            background: #000;
             border: 2px solid var(--accent);
             border-radius: 12px;
-            width: 100%;
-            max-width: 700px;
-            padding: 30px;
-            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+            box-shadow: 0 0 30px var(--accent-glow);
+            overflow: hidden;
         }
-        header {
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* UI Overlays */
+        .hud {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid #334155;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
+            background: rgba(17, 24, 39, 0.85);
+            padding: 10px 16px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(4px);
+            pointer-events: none;
         }
-        .status-bar {
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-        .fragments-box {
+
+        .fragments-hud {
             display: flex;
-            gap: 8px;
-            margin-top: 10px;
+            gap: 6px;
         }
-        .fragment {
-            width: 25px;
-            height: 25px;
+
+        .frag-icon {
+            width: 22px;
+            height: 22px;
             border: 1px dashed var(--text-muted);
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.8rem;
-            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--text-muted);
         }
-        .fragment.acquired {
-            background-color: var(--accent);
+
+        .frag-icon.active {
+            background: var(--accent);
             border-color: var(--accent);
             color: #000;
-            font-weight: bold;
+            box-shadow: 0 0 8px var(--accent);
         }
-        button {
-            background-color: var(--accent);
+
+        /* Modal Interactivo */
+        .modal {
+            position: absolute;
+            inset: 0;
+            background: rgba(9, 13, 22, 0.92);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 24px;
+            z-index: 10;
+            backdrop-filter: blur(6px);
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-card {
+            background: var(--panel-bg);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 620px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(56, 189, 248, 0.2);
+        }
+
+        .modal-title {
+            color: var(--primary);
+            font-size: 1.25rem;
+            margin-bottom: 8px;
+        }
+
+        .modal-desc {
+            font-size: 0.95rem;
+            color: var(--text-main);
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .options-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .opt-btn {
+            background: #1f2937;
+            color: var(--text-main);
+            border: 1px solid #374151;
+            padding: 12px;
+            border-radius: 6px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .opt-btn:hover {
+            background: #374151;
+            border-color: var(--primary);
+        }
+
+        .hint-box {
+            background: rgba(56, 189, 248, 0.1);
+            border-left: 4px solid var(--primary);
+            padding: 10px;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            color: #bae6fd;
+            display: none;
+        }
+
+        .action-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            background: var(--accent);
             color: #000;
             border: none;
-            padding: 10px 20px;
+            padding: 10px 18px;
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
-            transition: background 0.2s;
         }
-        button:hover {
-            background-color: var(--accent-hover);
+
+        .btn-hint {
+            background: transparent;
+            color: var(--primary);
+            border: 1px solid var(--primary);
         }
+
+        .feedback-msg {
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 0.9rem;
+            min-height: 20px;
+        }
+
+        /* Controls Overlay for Mobile */
+        .mobile-controls {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+
+        .dpad, .action-btn-container {
+            pointer-events: auto;
+        }
+
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 40px);
+            grid-template-rows: repeat(3, 40px);
+            gap: 4px;
+        }
+
+        .dpad button {
+            background: rgba(31, 41, 55, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+
+        .interact-btn {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 50%;
+            font-weight: bold;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        /* Prompt Text */
+        .prompt-interact {
+            position: absolute;
+            bottom: 70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: #000;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            box-shadow: 0 0 12px var(--accent);
+            display: none;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { transform: translateX(-50%) scale(1); }
+            to { transform: translateX(-50%) scale(1.05); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-wrapper">
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <!-- HUD -->
+    <div class="hud">
+        <div>
+            <div style="color:var(--accent); font-weight:bold; font-size:0.9rem;">FIREWALL PERIÓDICO</div>
+            <div style="font-size:0.75rem; color:var(--text-muted);" id="objective-text">Explora la sala y recupera los 5 nodos</div>
+        </div>
+        <div class="fragments-hud">
+            <div class="frag-icon" id="f1">1</div>
+            <div class="frag-icon" id="f2">2</div>
+            <div class="frag-icon" id="f3">3</div>
+            <div class="frag-icon" id="f4">4</div>
+            <div class="frag-icon" id="f5">5</div>
+        </div>
+    </div>
+
+    <!-- Indicador Interacción -->
+    <div class="prompt-interact" id="prompt">Presiona [E] o Toca para acceder al Nodo</div>
+
+    <!-- Controles Móviles / Táctiles -->
+    <div class="mobile-controls">
+        <div class="dpad">
+            <div></div><button id="btn-up">▲</button><div></div>
+            <button id="btn-left">◄</button><div></div><button id="btn-right">►</button>
+            <div></div><button id="btn-down">▼</button><div></div>
+        </div>
+        <div class="action-btn-container">
+            <button class="interact-btn" id="btn-interact">[E]</button>
+        </div>
+    </div>
+
+    <!-- Modal de Desafío -->
+    <div class="modal" id="quiz-modal">
+        <div class="modal-card">
+            <div class="modal-title" id="m-title">Nodo 1</div>
+            <div class="modal-desc" id="m-desc">Descripción de la pregunta...</div>
+            <div class="options-grid" id="m-options"></div>
+            <div class="hint-box" id="m-hint">Pista...</div>
+            <div class="action-row">
+                <button class="btn btn-hint" onclick="toggleHint()">Pista</button>
+                <button class="btn" style="background:#6b7280; color:#fff;" onclick="closeModal()">Cerrar</button>
+            </div>
+            <div class="feedback-msg" id="m-feedback"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Sonidos con Web Audio API
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq, duration) {
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.frequency.value = freq;
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + duration);
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // Jugador
+    const player = {
+        x: 400,
+        y: 500,
+        size: 20,
+        speed: 3.5,
+        color: '#10b981',
+        vx: 0,
+        vy: 0
+    };
+
+    // Nodos / Terminales en la habitación
+    const nodes = [
+        { id: 1, name: "Nodo 1: Apantallamiento", x: 150, y: 150, size: 30, solved: false, color: '#38bdf8' },
+        { id: 2, name: "Nodo 2: Variación Periódica", x: 650, y: 150, size: 30, solved: false, color: '#38bdf8' },
+        { id: 3, name: "Nodo 3: Datos de Metales", x: 150, y: 380, size: 30, solved: false, color: '#38bdf8' },
+        { id: 4, name: "Nodo 4: E-Waste & Reciclaje", x: 650, y: 380, size: 30, solved: false, color: '#38bdf8' },
+        { id: 5, name: "Nodo 5: Orbitales d/f", x: 400, y: 120, size: 30, solved: false, color: '#38bdf8' },
+        { id: 6, name: "FIREWALL CENTRAL", x: 400, y: 280, size: 45, isCore: true, color: '#ef4444' }
+    ];
+
+    // Datos de preguntas
+    const quizData = {
+        1: {
+            title: "Nodo 1: Apantallamiento y Núcleo",
+            desc: "¿Cómo afecta el incremento de electrones en las capas internas (efecto pantalla) a la carga nuclear efectiva (Z_eff) que experimenta el electrón de valencia en semiconductores?",
+            options: [
+                { text: "Aumenta la fuerza de atracción debido a mayor número atómico.", correct: false },
+                { text: "Reduce la atracción neta del núcleo porque las capas internas blindan la carga positiva.", correct: true },
+                { text: "No genera ningún cambio en la estructura atómica.", correct: false }
+            ],
+            hint: "Las capas internas actúan como un escudo espacial que atenúa la fuerza sobre el electrón externo."
+        },
+        2: {
+            title: "Nodo 2: Variación en la Tabla Periódica",
+            desc: "Al avanzar de izquierda a derecha en un mismo periodo (ej. Silicio a Cloro), ¿qué ocurre con la carga nuclear efectiva (Z_eff) y el radio atómico?",
+            options: [
+                { text: "Aumenta la Z_eff y disminuye el radio atómico.", correct: true },
+                { text: "Disminuye la Z_eff y aumenta el radio atómico.", correct: false },
+                { text: "Ambas magnitudes permanecen constantes.", correct: false }
+            ],
+            hint: "Aumenta la carga nuclear Z sin sumar nuevas capas de apantallamiento principal."
+        },
+        3: {
+            title: "Nodo 3: Análisis de Metales de Hardware",
+            desc: "En una ficha técnica de metales de disipadores (Cobre, Níquel, Oro), ¿cuál retiene con mayor fuerza sus electrones de valencia exteriores?",
+            options: [
+                { text: "El elemento con mayor número atómico y menor apantallamiento relativo.", correct: true },
+                { text: "El elemento que tenga menor cantidad total de protones.", correct: false },
+                { text: "Todos los metales retienen a sus electrones con la misma fuerza.", correct: false }
+            ],
+            hint: "Aplica la relación Z_eff = Z - S. A mayor valor neto, mayor atracción de valencia."
+        },
+        4: {
+            title: "Nodo 4: Recuperación de E-Waste",
+            desc: "En la lixiviación química de residuos electrónicos, ¿cómo facilita una baja Z_eff la extracción de metales?",
+            options: [
+                { text: "Al requerir menor energía de ionización, cede electrones fácilmente para reaccionar.", correct: true },
+                { text: "Una baja Z_eff impide que el metal reaccione químicamente.", correct: false },
+                { text: "Aumenta la dureza mecánica del residuo electrónico.", correct: false }
+            ],
+            hint: "Menor Z_eff implica que los electrones están menos retenidos, bajando la energía de ionización."
+        },
+        5: {
+            title: "Nodo 5: Orbitales d/f y Contracción",
+            desc: "¿Por qué los electrones en orbitales d y f ejercen un apantallamiento (S) deficiente en comparación con orbitales s y p?",
+            options: [
+                { text: "Poseen geometrías espaciales más difusas y menor capacidad de penetración al núcleo.", correct: true },
+                { text: "Tienen carga positiva en lugar de negativa.", correct: false },
+                { text: "Se ubican fuera de la nube electrónica del átomo.", correct: false }
+            ],
+            hint: "La forma espacial de los orbitales d y f deja 'huecos' por donde se filtra la fuerza del núcleo."
+        }
+    };
+
+    let nearNode = null;
+    let fragments = [false, false, false, false, false];
+    const keys = {};
+
+    // Eventos de teclado
+    window.addEventListener('keydown', e => {
+        keys[e.key.toLowerCase()] = true;
+        if(e.key.toLowerCase() === 'e' && nearNode) interactWithNode();
+    });
+    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+    // Controles táctiles
+    function setupMobileControls() {
+        const bindBtn = (id, key) => {
+            const btn = document.getElementById(id);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+            btn.addEventListener('mousedown', () => keys[key] = true);
+            btn.addEventListener('mouseup', () => keys[key] = false);
+        };
+        bindBtn('btn-up', 'w');
+        bindBtn('btn-down', 's');
+        bindBtn('btn-left', 'a');
+        bindBtn('btn-right', 'd');
+        document.getElementById('btn-interact').addEventListener('click', () => { if(nearNode) interactWithNode(); });
+    }
+    setupMobileControls();
+
+    function update() {
+        // Movimiento
+        player.vx = 0;
+        player.vy = 0;
+        if (keys['w'] || keys['arrowup']) player.vy = -player.speed;
+        if (keys['s'] || keys['arrowdown']) player.vy = player.speed;
+        if (keys['a'] || keys['arrowleft']) player.vx = -player.speed;
+        if (keys['d'] || keys['arrowright']) player.vx =Aquí tienes la solución completa: transformamos el proyecto en un **videojuego 2D interactivo con movimiento de personaje** en vista superior (*top-down*).
+
+El jugador controla un avatar cibernético (usando las **teclas W, A, S, D, flechas o los controles táctiles en pantalla**) para navegar libremente por la sala de servidores del centro de cómputo. En la sala encontrará **5 terminales/nodos físicos** distribuidos en distintas secciones del mapa. Al acercarse a cada terminal y presionar **[ESPACIO] / [INTERACTUAR]**, se abrirá el desafío interactivo de química ($Z_{eff}$). Al resolverlo, el nodo se iluminará en verde y se desbloqueará un fragmento de la clave final.
+
+---
+
+### Código completo para tu `index.html` en GitHub
+
+Copia todo el siguiente código y reemplaza el contenido de tu archivo **`index.html`** en tu repositorio de GitHub (`qumica-juego`):
+
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Firewall Periódico 2D: Carga Nuclear Efectiva</title>
+    <style>
+        :root {
+            --bg-color: #090d16;
+            --panel-bg: #111827;
+            --accent: #10b981;
+            --accent-glow: rgba(16, 185, 129, 0.4);
+            --cyan: #06b6d4;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--panel-bg);
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            box-shadow: 0 0 25px var(--accent-glow);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HUD Superior */
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background: #1f2937;
+            border-bottom: 1px solid #374151;
+            z-index: 5;
+        }
+
+        .title-box {
+            font-weight: bold;
+            font-size: 1.1rem;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .fragments-hud {
+            display: flex;
+            gap: 6px;
+        }
+
+        .hud-fragment {
+            width: 28px;
+            height: 28px;
+            border: 1px dashed var(--text-muted);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: var(--text-muted);
+            background: #111827;
+        }
+
+        .hud-fragment.active {
+            border-style: solid;
+            border-color: var(--accent);
+            background-color: var(--accent);
+            color: #000;
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        /* Area de juego en Canvas */
+        #gameCanvas {
+            background-color: #050811;
+            display: block;
+            width: 100%;
+            height: auto;
+            touch-action: none;
+        }
+
+        /* Controles táctiles en pantalla */
+        .touch-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #1f2937;
+            border-top: 1px solid #374151;
+        }
+
+        .dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 42px);
+            grid-template-rows: repeat(3, 42px);
+            gap: 4px;
+        }
+
+        .btn-ctrl {
+            background: #374151;
+            border: 1px solid #4b5563;
+            color: white;
+            font-weight: bold;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .btn-ctrl:active {
+            background: var(--accent);
+            color: black;
+        }
+
+        .btn-action {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-weight: bold;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .btn-action:active {
+            transform: scale(0.95);
+        }
+
+        /* Ventanas Modales / Popups */
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 8, 17, 0.85);
+            backdrop-filter: blur(6px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            z-index: 10;
+        }
+
+        .modal-card {
+            background-color: #1e293b;
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            padding: 24px;
+            max-width: 550px;
+            width: 100%;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            animation: fadeIn 0.25s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .modal-title {
+            color: var(--accent);
+            margin-top: 0;
+            font-size: 1.25rem;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 8px;
+        }
+
+        .modal-desc {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: var(--text-main);
+            margin-bottom: 16px;
+        }
+
         .option-btn {
             display: block;
             width: 100%;
@@ -87,159 +666,462 @@
             color: var(--text-main);
             text-align: left;
             margin-bottom: 10px;
-            padding: 12px;
+            padding: 12px 14px;
             border: 1px solid #475569;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
         }
+
         .option-btn:hover {
             background-color: #475569;
+            border-color: var(--accent);
         }
+
         .hint-box {
             background-color: #0f172a;
-            border-left: 4px solid #3b82f6;
+            border-left: 4px solid var(--cyan);
             padding: 10px;
-            margin: 15px 0;
-            font-size: 0.9rem;
+            margin: 12px 0;
+            font-size: 0.85rem;
             color: #93c5fd;
             display: none;
         }
-        .feedback {
-            margin-top: 15px;
+
+        .feedback-text {
+            margin-top: 10px;
             font-weight: bold;
+            font-size: 0.95rem;
+            min-height: 24px;
+        }
+
+        .btn-secondary {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        .btn-close {
+            background: #64748b;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            margin-top: 10px;
+            float: right;
         }
     </style>
 </head>
 <body>
 
-<div class="game-container" id="app"></div>
+<div class="game-wrapper">
+    <!-- HUD Superior -->
+    <div class="hud">
+        <div class="title-box">
+            <span>🛡️ FIREWALL PERIÓDICO</span>
+        </div>
+        <div class="fragments-hud">
+            <div class="hud-fragment" id="frag-0">α</div>
+            <div class="hud-fragment" id="frag-1">β</div>
+            <div class="hud-fragment" id="frag-2">γ</div>
+            <div class="hud-fragment" id="frag-3">δ</div>
+            <div class="hud-fragment" id="frag-4">Ω</div>
+        </div>
+    </div>
+
+    <!-- Lienzo de juego (Canvas 2D) -->
+    <canvas id="gameCanvas" width="800" height="500"></canvas>
+
+    <!-- Controles de pantalla para Móvil / Genially -->
+    <div class="touch-controls">
+        <div class="dpad">
+            <div></div>
+            <button class="btn-ctrl" id="btnUp">▲</button>
+            <div></div>
+            <button class="btn-ctrl" id="btnLeft">◄</button>
+            <div></div>
+            <button class="btn-ctrl" id="btnRight">►</button>
+            <div></div>
+            <button class="btn-ctrl" id="btnDown">▼</button>
+            <div></div>
+        </div>
+        <button class="btn-action" id="btnInteract">⚡ INTERACTUAR</button>
+    </div>
+
+    <!-- Modal de Desafío de Terminal -->
+    <div class="modal-overlay" id="quizModal">
+        <div class="modal-card">
+            <h3 class="modal-title" id="modalTitle">Terminal 1</h3>
+            <p class="modal-desc" id="modalDesc">Cargando datos del nodo...</p>
+            <div id="modalOptions"></div>
+            
+            <button class="btn-secondary" onclick="toggleHint()">💡 Pista Interactiva</button>
+            <div class="hint-box" id="modalHint"></div>
+            
+            <div class="feedback-text" id="modalFeedback"></div>
+            <button class="btn-close" onclick="closeModal()">Cerrar Terminal</button>
+        </div>
+    </div>
+
+    <!-- Modal Final de Victoria -->
+    <div class="modal-overlay" id="winModal">
+        <div class="modal-card" style="text-align: center; border-color: var(--accent);">
+            <h2 style="color: var(--accent); margin-top: 0;">🎉 ¡FIREWALL RESTAURADO!</h2>
+            <p>Has superado las 5 cámaras y restablecido los valores de Carga Nuclear Efectiva ($Z_{eff}$) en el centro de cómputo.</p>
+            <div style="background: #0f172a; padding: 15px; border-radius: 8px; margin: 15px 0; border: 1px solid var(--accent);">
+                <span style="font-size: 0.85rem; color: var(--text-muted); display: block;">CLAVE DE RECUPERACIÓN FINAL</span>
+                <strong style="font-size: 1.4rem; color: var(--accent); letter-spacing: 2px;">Z_EFF-CORE-SUCCESS-2026</strong>
+            </div>
+            <p style="font-size: 0.85rem; color: var(--text-muted);">
+                Síntesis: La comprensión del apantallamiento $S$ y la atracción nuclear neta permitió reconfigurar las bases de datos de hardware y reciclaje electrónico.
+            </p>
+            <button class="btn-action" onclick="resetGame()">Reiniciar Misión</button>
+        </div>
+    </div>
+</div>
 
 <script>
-    const stages = [
-        {
-            title: "Cámara 1: Apantallamiento y Núcleo",
-            desc: "¿Cómo afecta el incremento de electrones en las capas internas (efecto pantalla) a la carga nuclear efectiva (Z_eff) que experimenta el electrón más externo en los átomos usados para pistas de semiconductores?",
-            options: [
-                { text: "Aumenta la fuerza de atracción debido a mayor masa nuclear.", correct: false },
-                { text: "Reduce la atracción neta del núcleo porque las capas internas blindan la carga positiva.", correct: true },
-                { text: "No genera ningún cambio en la estructura atómica de los materiales.", correct: false }
-            ],
-            hint: "Piensa en las capas intermedias como un escudo espacial que debilita la atracción directa del núcleo."
+    // --- AUDIO API (Efectos de sonido sintetizados) ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq, type, duration) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    // --- CONFIGURACIÓN DEL JUEGO ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Jugador (Avatar 2D)
+    const player = {
+        x: 400,
+        y: 430,
+        size: 18,
+        speed: 3.5,
+        color: '#10b981'
+    };
+
+    // Teclas presionadas
+    const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
+
+    // Nodos / Terminales en la sala de servidores
+    const terminals = [
+        { id: 0, code: 'α', name: "Cámara 1: Apantallamiento y Núcleo", x: 150, y: 120, cleared: false,
+          desc: "¿Cómo afecta el incremento de electrones en las capas internas (efecto pantalla) a la carga nuclear efectiva (Z_eff) sobre el electrón de valencia exterior?",
+          options: [
+            { text: "Aumenta la atracción debido a la mayor masa nuclear total.", correct: false },
+            { text: "Disminuye la atracción neta porque los electrones internos repelen al electrón externo.", correct: true },
+            { text: "No genera ninguna alteración en la fuerza de atracción atómica.", correct: false }
+          ],
+          hint: "Imagina las capas internas como un escudo físico que amortigua la fuerza directa del núcleo positivo."
         },
-        {
-            title: "Cámara 2: Variación Periódica",
-            desc: "Al avanzar de izquierda a derecha a lo largo de un mismo periodo en la tabla periódica (ej. elementos del bloque p), ¿qué ocurre con la carga nuclear efectiva y el radio atómico?",
-            options: [
-                { text: "Aumenta la Z_eff y disminuye el radio atómico.", correct: true },
-                { text: "Disminuye la Z_eff y aumenta el radio atómico.", correct: false },
-                { text: "Ambas magnitudes se mantienen completamente constantes.", correct: false }
-            ],
-            hint: "A mayor número atómico en el mismo periodo, se suman protones al núcleo sin añadir nuevas capas principales de valencia."
+        { id: 1, code: 'β', name: "Cámara 2: Variación en la Tabla Periódica", x: 650, y: 120, cleared: false,
+          desc: "Al desplazarse de izquierda a derecha a lo largo de un mismo periodo, ¿qué ocurre con la Z_eff y el radio atómico de los semiconductores?",
+          options: [
+            { text: "Aumenta la Z_eff y disminuye el radio atómico.", correct: true },
+            { text: "Disminuye la Z_eff y aumenta el radio atómico.", correct: false },
+            { text: "La Z_eff permanece idéntica en todo el periodo.", correct: false }
+          ],
+          hint: "Se agregan protones al núcleo sin añadir nuevas capas internas de apantallamiento."
         },
-        {
-            title: "Cámara 3: Análisis de Ficha Técnica",
-            desc: "Dada una tabla de metales de transición empleados en disipadores térmicos (Cobre, Níquel), ¿cuál de ellos retiene con mayor fuerza a sus electrones de valencia exteriores si posee mayor Z_eff neta?",
-            options: [
-                { text: "El que posea menor carga nuclear real.", correct: false },
-                { text: "El elemento con mayor número atómico y menor apantallamiento relativo.", correct: true },
-                { text: "Independientemente de la Z_eff, todos retienen igual los electrones.", correct: false }
-            ],
-            hint: "Cruza los datos de la configuración electrónica abreviada con la fórmula Z_eff = Z - S."
+        { id: 2, code: 'γ', name: "Cámara 3: Datos y Ficha Técnica de Materiales", x: 150, y: 320, cleared: false,
+          desc: "Al comparar metales de transición de hardware (Cobre y Níquel), ¿qué parámetro determina cuál retiene sus electrones con mayor firmeza?",
+          options: [
+            { text: "Aquel que posea menor número atómico Z.", correct: false },
+            { text: "Aquel con mayor valor de Z_eff calculado mediante Z_eff = Z - S.", correct: true },
+            { text: "El tamaño total del cristal metálico independientemente de Z_eff.", correct: false }
+          ],
+          hint: "Calcula la carga nuclear efectiva restando la constante de apantallamiento S a la carga nuclear Z."
         },
-        {
-            title: "Cámara 4: Aplicación en Residuos Electrónicos (E-Waste)",
-            desc: "En los procesos químicos de reciclaje y recuperación de metales preciosos en e-waste, ¿cómo se relaciona la Z_eff con la reactividad del metal ante agentes de lixiviación?",
-            options: [
-                { text: "Una Z_eff baja facilita que el átomo ceda electrones con menor energía de ionización.", correct: true },
-                { text: "La carga nuclear efectiva no tiene relación con los procesos químicos de reciclaje.", correct: false },
-                { text: "Una mayor Z_eff destruye por completo los enlaces moleculares de los residuos.", correct: false }
-            ],
-            hint: "Analiza la facilidad con la que un metal cede electrones en función de su energía de ionización."
+        { id: 3, code: 'δ', name: "Cámara 4: Residuos Electrónicos (E-Waste)", x: 650, y: 320, cleared: false,
+          desc: "En el reciclaje químico de e-waste, ¿cómo influye una baja Z_eff en la reactividad de los metales recuperados?",
+          options: [
+            { text: "Facilita la pérdida de electrones (menor energía de ionización).", correct: true },
+            { text: "Impide totalmente la disolución o reacción del metal.", correct: false },
+            { text: "Aumenta infinitamente la atracción atómica del material.", correct: false }
+          ],
+          hint: "A menor Z_eff, menor es el agarre del núcleo sobre los electrones exteriores."
         },
-        {
-            title: "Cámara 5: Desafío de Síntesis Avanzada",
-            desc: "¿Por qué los electrones situados en orbitales d y f ejercen una constante de apantallamiento (S) relativamente deficiente frente a los electrones s y p?",
-            options: [
-                { text: "Porque tienen geometrías espaciales más difusas y menor capacidad de penetración hacia el núcleo.", correct: true },
-                { text: "Porque se encuentran siempre más alejados del núcleo que cualquier otro orbital.", correct: false },
-                { text: "Porque su carga eléctrica total es negativa y neutraliza al núcleo por completo.", correct: false }
-            ],
-            hint: "La capacidad de penetración de las funciones de onda orbitales determina qué tan cerca están del núcleo."
+        { id: 4, code: 'Ω', name: "Cámara 5: Desafío de Síntesis Avanzada", x: 400, y: 180, cleared: false,
+          desc: "¿Por qué los electrones de orbitales d y f ejercen un apantallamiento (S) deficiente en comparación con los orbitales s y p?",
+          options: [
+            { text: "Por su geometría espacial difusa y baja capacidad de penetración al núcleo.", correct: true },
+            { text: "Porque tienen carga eléctrica positiva en lugar de negativa.", correct: false },
+            { text: "Porque siempre están fuera de la estructura del átomo.", correct: false }
+          ],
+          hint: "La forma espacial de las funciones de onda d y f influye en su eficacia para blindar el núcleo."
         }
     ];
 
-    let currentStage = 0;
-    let fragments = [false, false, false, false, false];
+    // Obstáculos de la sala (Servidores y Paredes)
+    const obstacles = [
+        { x: 280, y: 80, w: 240, h: 40 },  // Servidor Central Norte
+        { x: 280, y: 360, w: 240, h: 40 }, // Servidor Central Sur
+        { x: 50,  y: 200, w: 60,  h: 80 },  // Rack Oeste
+        { x: 690, y: 200, w: 60,  h: 80 }   // Rack Este
+    ];
 
-    function render() {
-        const app = document.getElementById('app');
-        if (currentStage < stages.length) {
-            let stage = stages[currentStage];
-            app.innerHTML = `
-                <header>
-                    <div>
-                        <strong>Firewall Periódico</strong>
-                        <div class="status-bar">Cámara ${currentStage + 1} de 5</div>
-                    </div>
-                    <div>
-                        <div class="status-bar">Fragmentos:</div>
-                        <div class="fragments-box">
-                            ${fragments.map((f, i) => `<div class="fragment ${f ? 'acquired' : ''}">${i+1}</div>`).join('')}
-                        </div>
-                    </div>
-                </header>
-                <h2>${stage.title}</h2>
-                <p>${stage.desc}</p>
-                <div id="options">
-                    ${stage.options.map((opt, idx) => `
-                        <button class="option-btn" onclick="checkAnswer(${idx})">${opt.text}</button>
-                    `).join('')}
-                </div>
-                <button onclick="toggleHint()" style="background:#3b82f6; color:#fff; margin-top:10px;">Ver Pista Interactiva</button>
-                <div id="hint" class="hint-box">${stage.hint}</div>
-                <div id="feedback" class="feedback"></div>
-            `;
-        } else {
-            app.innerHTML = `
-                <header>
-                    <div><strong>Terminal de Desbloqueo - Firewall Restaurado</strong></div>
-                </header>
-                <h2>¡Sistema Recuperado con Éxito!</h2>
-                <p>Has recopilado los 5 fragmentos de código basados en la carga nuclear efectiva y las propiedades de los materiales informáticos.</p>
-                <p><strong>Clave de Acceso Final Generada:</strong> <span style="color:var(--accent);">Z_EFF-9850H-CORE-OK</span></p>
-                <p style="font-size: 0.9rem; color:var(--text-muted);">Síntesis: Comprender el apantallamiento electrónico y la variación periódica permitió reestructurar los perfiles atómicos de los componentes.</p>
-                <button onclick="resetGame()">Reiniciar Sistema</button>
-            `;
+    let activeTerminal = null;
+
+    // --- EVENTOS DE TECLADO ---
+    window.addEventListener('keydown', e => {
+        if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+        if (e.key === ' ' || e.key === 'e' || e.key === 'E') interact();
+    });
+
+    window.addEventListener('keyup', e => {
+        if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
+    });
+
+    // --- CONTROLES TÁCTILES / BOTONES ---
+    function bindBtn(id, keyName) {
+        const btn = document.getElementById(id);
+        const start = (e) => { e.preventDefault(); keys[keyName] = true; };
+        const end = (e) => { e.preventDefault(); keys[keyName] = false; };
+        btn.addEventListener('touchstart', start);
+        btn.addEventListener('touchend', end);
+        btn.addEventListener('mousedown', start);
+        btn.addEventListener('mouseup', end);
+    }
+    bindBtn('btnUp', 'w');
+    bindBtn('btnDown', 's');
+    bindBtn('btnLeft', 'a');
+    bindBtn('btnRight', 'd');
+    document.getElementById('btnInteract').addEventListener('click', interact);
+
+    // --- LÓGICA DE MOVIMIENTO Y COLISIONES ---
+    function updatePlayer() {
+        let dx = 0, dy = 0;
+        if (keys.w || keys.ArrowUp) dy -= player.speed;
+        if (keys.s || keys.ArrowDown) dy += player.speed;
+        if (keys.a || keys.ArrowLeft) dx -= player.speed;
+        if (keys.d || keys.ArrowRight) dx += player.speed;
+
+        // Normalizar diagonal
+        if (dx !== 0 && dy !== 0) {
+            dx *= 0.7071;
+            dy *= 0.7071;
+        }
+
+        let nextX = player.x + dx;
+        let nextY = player.y + dy;
+
+        // Colisión con límites del mapa (Canvas)
+        if (nextX < player.size) nextX = player.size;
+        if (nextX > canvas.width - player.size) nextX = canvas.width - player.size;
+        if (nextY < player.size) nextY = player.size;
+        if (nextY > canvas.height - player.size) nextY = canvas.height - player.size;
+
+        // Colisión con obstáculos (Racks)
+        for (let obs of obstacles) {
+            if (nextX + player.size > obs.x && nextX - player.size < obs.x + obs.w &&
+                nextY + player.size > obs.y && nextY - player.size < obs.y + obs.h) {
+                // Bloquear paso
+                return;
+            }
+        }
+
+        player.x = nextX;
+        player.y = nextY;
+    }
+
+    // --- INTERACCIÓN CON TERMINALES ---
+    function interact() {
+        if (activeTerminal !== null) return;
+
+        // Buscar terminal cercano
+        for (let t of terminals) {
+            let dist = Math.hypot(player.x - t.x, player.y - t.y);
+            if (dist < 45) {
+                openTerminalModal(t);
+                playBeep(600, 'sine', 0.15);
+                return;
+            }
         }
     }
 
+    function openTerminalModal(t) {
+        activeTerminal = t;
+        document.getElementById('modalTitle').innerText = `${t.name} [Código: ${t.code}]`;
+        document.getElementById('modalDesc').innerText = t.desc;
+        document.getElementById('modalHint').innerText = t.hint;
+        document.getElementById('modalHint').style.display = 'none';
+        document.getElementById('modalFeedback').innerText = '';
+
+        const optionsBox = document.getElementById('modalOptions');
+        optionsBox.innerHTML = '';
+
+        if (t.cleared) {
+            optionsBox.innerHTML = `<p style="color: var(--accent); font-weight: bold;">✔ Este nodo ya ha sido recuperado e integrado al firewall.</p>`;
+        } else {
+            t.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerText = opt.text;
+                btn.onclick = () => checkAnswer(idx);
+                optionsBox.appendChild(btn);
+            });
+        }
+
+        document.getElementById('quizModal').style.display = 'flex';
+    }
+
     function checkAnswer(idx) {
-        let stage = stages[currentStage];
-        let feedback = document.getElementById('feedback');
-        if (stage.options[idx].correct) {
-            fragments[currentStage] = true;
+        if (!activeTerminal) return;
+        const feedback = document.getElementById('modalFeedback');
+        if (activeTerminal.options[idx].correct) {
+            activeTerminal.cleared = true;
             feedback.style.color = "var(--accent)";
-            feedback.innerText = "¡Correcto! Fragmento de clave obtenido.";
+            feedback.innerText = "¡RESPUESTA CORRECTA! Fragmento desencriptado.";
+            playBeep(880, 'triangle', 0.25);
+
+            // Actualizar HUD
+            document.getElementById(`frag-${activeTerminal.id}`).classList.add('active');
+
             setTimeout(() => {
-                currentStage++;
-                render();
+                closeModal();
+                checkWinCondition();
             }, 1200);
         } else {
-            feedback.style.color = "var(--error)";
-            feedback.innerText = "Respuesta incorrecta. Analiza de nuevo el comportamiento atómico.";
+            feedback.style.color = "var(--danger)";
+            feedback.innerText = "❌ Falla de validación. Analiza el apantallamiento y vuelve a intentarlo.";
+            playBeep(180, 'sawtooth', 0.3);
         }
     }
 
     function toggleHint() {
-        let hint = document.getElementById('hint');
+        const hint = document.getElementById('modalHint');
         hint.style.display = hint.style.display === 'block' ? 'none' : 'block';
     }
 
-    function resetGame() {
-        currentStage = 0;
-        fragments = [false, false, false, false, false];
-        render();
+    function closeModal() {
+        document.getElementById('quizModal').style.display = 'none';
+        activeTerminal = null;
     }
 
-    render();
+    function checkWinCondition() {
+        if (terminals.every(t => t.cleared)) {
+            setTimeout(() => {
+                document.getElementById('winModal').style.display = 'flex';
+                playBeep(523.25, 'sine', 0.2);
+                setTimeout(() => playBeep(659.25, 'sine', 0.2), 200);
+                setTimeout(() => playBeep(783.99, 'sine', 0.4), 400);
+            }, 500);
+        }
+    }
+
+    function resetGame() {
+        terminals.forEach(t => t.cleared = false);
+        document.querySelectorAll('.hud-fragment').forEach(f => f.classList.remove('active'));
+        document.getElementById('winModal').style.display = 'none';
+        player.x = 400;
+        player.y = 430;
+    }
+
+    // --- RENDERIZADO DEL MAPA (CANVAS) ---
+    function draw() {
+        // Fondo / Rejilla estilo Ciberpunk
+        ctx.fillStyle = '#050811';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Dibujar Rejilla
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 40) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += 40) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+
+        // Dibujar Obstáculos (Racks de Servidores)
+        obstacles.forEach(obs => {
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+            ctx.strokeStyle = '#334155';
+            ctx.strokeRect(obs.x, obs.y, obs.w, obs.h);
+
+            // Luces de servidores
+            ctx.fillStyle = '#06b6d4';
+            ctx.fillRect(obs.x + 8, obs.y + 8, 12, 4);
+            ctx.fillRect(obs.x + 26, obs.y + 8, 12, 4);
+        });
+
+        // Dibujar Nodos / Terminales
+        terminals.forEach(t => {
+            let isNear = Math.hypot(player.x - t.x, player.y - t.y) < 45;
+
+            // Halo interactivo
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, 24, 0, Math.PI * 2);
+            ctx.fillStyle = t.cleared ? 'rgba(16, 185, 129, 0.2)' : (isNear ? 'rgba(6, 182, 212, 0.3)' : 'rgba(239, 68, 68, 0.15)');
+            ctx.fill();
+
+            // Terminal físico
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, 14, 0, Math.PI * 2);
+            ctx.fillStyle = t.cleared ? '#10b981' : (isNear ? '#06b6d4' : '#ef4444');
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Símbolo del nodo
+            ctx.fillStyle = '#000';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(t.code, t.x, t.y);
+
+            // Prompt de interacción si está cerca
+            if (isNear && !t.cleared) {
+                ctx.fillStyle = '#06b6d4';
+                ctx.font = 'bold 11px sans-serif';
+                ctx.fillText("[ESPACIO / INTERACTUAR]", t.x, t.y - 32);
+            }
+        });
+
+        // Dibujar Jugador (Avatar Cyber)
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+        ctx.fillStyle = player.color;
+        ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Visor / Dirección del Jugador
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.arc(player.x, player.y - 3, 5, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // --- BUCLE PRINCIPAL (GAME LOOP) ---
+    function gameLoop() {
+        updatePlayer();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
 </script>
 
 </body>
