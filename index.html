@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firewall Periódico - Z_eff</title>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --panel-bg: #1e293b;
+            --accent: #10b981;
+            --accent-hover: #059669;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --error: #ef4444;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .game-container {
+            background-color: var(--panel-bg);
+            border: 2px solid var(--accent);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 700px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .status-bar {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        .fragments-box {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .fragment {
+            width: 25px;
+            height: 25px;
+            border: 1px dashed var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
+        .fragment.acquired {
+            background-color: var(--accent);
+            border-color: var(--accent);
+            color: #000;
+            font-weight: bold;
+        }
+        button {
+            background-color: var(--accent);
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+        .option-btn {
+            display: block;
+            width: 100%;
+            background-color: #334155;
+            color: var(--text-main);
+            text-align: left;
+            margin-bottom: 10px;
+            padding: 12px;
+            border: 1px solid #475569;
+        }
+        .option-btn:hover {
+            background-color: #475569;
+        }
+        .hint-box {
+            background-color: #0f172a;
+            border-left: 4px solid #3b82f6;
+            padding: 10px;
+            margin: 15px 0;
+            font-size: 0.9rem;
+            color: #93c5fd;
+            display: none;
+        }
+        .feedback {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="game-container" id="app"></div>
+
+<script>
+    const stages = [
+        {
+            title: "Cámara 1: Apantallamiento y Núcleo",
+            desc: "¿Cómo afecta el incremento de electrones en las capas internas (efecto pantalla) a la carga nuclear efectiva (Z_eff) que experimenta el electrón más externo en los átomos usados para pistas de semiconductores?",
+            options: [
+                { text: "Aumenta la fuerza de atracción debido a mayor masa nuclear.", correct: false },
+                { text: "Reduce la atracción neta del núcleo porque las capas internas blindan la carga positiva.", correct: true },
+                { text: "No genera ningún cambio en la estructura atómica de los materiales.", correct: false }
+            ],
+            hint: "Piensa en las capas intermedias como un escudo espacial que debilita la atracción directa del núcleo."
+        },
+        {
+            title: "Cámara 2: Variación Periódica",
+            desc: "Al avanzar de izquierda a derecha a lo largo de un mismo periodo en la tabla periódica (ej. elementos del bloque p), ¿qué ocurre con la carga nuclear efectiva y el radio atómico?",
+            options: [
+                { text: "Aumenta la Z_eff y disminuye el radio atómico.", correct: true },
+                { text: "Disminuye la Z_eff y aumenta el radio atómico.", correct: false },
+                { text: "Ambas magnitudes se mantienen completamente constantes.", correct: false }
+            ],
+            hint: "A mayor número atómico en el mismo periodo, se suman protones al núcleo sin añadir nuevas capas principales de valencia."
+        },
+        {
+            title: "Cámara 3: Análisis de Ficha Técnica",
+            desc: "Dada una tabla de metales de transición empleados en disipadores térmicos (Cobre, Níquel), ¿cuál de ellos retiene con mayor fuerza a sus electrones de valencia exteriores si posee mayor Z_eff neta?",
+            options: [
+                { text: "El que posea menor carga nuclear real.", correct: false },
+                { text: "El elemento con mayor número atómico y menor apantallamiento relativo.", correct: true },
+                { text: "Independientemente de la Z_eff, todos retienen igual los electrones.", correct: false }
+            ],
+            hint: "Cruza los datos de la configuración electrónica abreviada con la fórmula Z_eff = Z - S."
+        },
+        {
+            title: "Cámara 4: Aplicación en Residuos Electrónicos (E-Waste)",
+            desc: "En los procesos químicos de reciclaje y recuperación de metales preciosos en e-waste, ¿cómo se relaciona la Z_eff con la reactividad del metal ante agentes de lixiviación?",
+            options: [
+                { text: "Una Z_eff baja facilita que el átomo ceda electrones con menor energía de ionización.", correct: true },
+                { text: "La carga nuclear efectiva no tiene relación con los procesos químicos de reciclaje.", correct: false },
+                { text: "Una mayor Z_eff destruye por completo los enlaces moleculares de los residuos.", correct: false }
+            ],
+            hint: "Analiza la facilidad con la que un metal cede electrones en función de su energía de ionización."
+        },
+        {
+            title: "Cámara 5: Desafío de Síntesis Avanzada",
+            desc: "¿Por qué los electrones situados en orbitales d y f ejercen una constante de apantallamiento (S) relativamente deficiente frente a los electrones s y p?",
+            options: [
+                { text: "Porque tienen geometrías espaciales más difusas y menor capacidad de penetración hacia el núcleo.", correct: true },
+                { text: "Porque se encuentran siempre más alejados del núcleo que cualquier otro orbital.", correct: false },
+                { text: "Porque su carga eléctrica total es negativa y neutraliza al núcleo por completo.", correct: false }
+            ],
+            hint: "La capacidad de penetración de las funciones de onda orbitales determina qué tan cerca están del núcleo."
+        }
+    ];
+
+    let currentStage = 0;
+    let fragments = [false, false, false, false, false];
+
+    function render() {
+        const app = document.getElementById('app');
+        if (currentStage < stages.length) {
+            let stage = stages[currentStage];
+            app.innerHTML = `
+                <header>
+                    <div>
+                        <strong>Firewall Periódico</strong>
+                        <div class="status-bar">Cámara ${currentStage + 1} de 5</div>
+                    </div>
+                    <div>
+                        <div class="status-bar">Fragmentos:</div>
+                        <div class="fragments-box">
+                            ${fragments.map((f, i) => `<div class="fragment ${f ? 'acquired' : ''}">${i+1}</div>`).join('')}
+                        </div>
+                    </div>
+                </header>
+                <h2>${stage.title}</h2>
+                <p>${stage.desc}</p>
+                <div id="options">
+                    ${stage.options.map((opt, idx) => `
+                        <button class="option-btn" onclick="checkAnswer(${idx})">${opt.text}</button>
+                    `).join('')}
+                </div>
+                <button onclick="toggleHint()" style="background:#3b82f6; color:#fff; margin-top:10px;">Ver Pista Interactiva</button>
+                <div id="hint" class="hint-box">${stage.hint}</div>
+                <div id="feedback" class="feedback"></div>
+            `;
+        } else {
+            app.innerHTML = `
+                <header>
+                    <div><strong>Terminal de Desbloqueo - Firewall Restaurado</strong></div>
+                </header>
+                <h2>¡Sistema Recuperado con Éxito!</h2>
+                <p>Has recopilado los 5 fragmentos de código basados en la carga nuclear efectiva y las propiedades de los materiales informáticos.</p>
+                <p><strong>Clave de Acceso Final Generada:</strong> <span style="color:var(--accent);">Z_EFF-9850H-CORE-OK</span></p>
+                <p style="font-size: 0.9rem; color:var(--text-muted);">Síntesis: Comprender el apantallamiento electrónico y la variación periódica permitió reestructurar los perfiles atómicos de los componentes.</p>
+                <button onclick="resetGame()">Reiniciar Sistema</button>
+            `;
+        }
+    }
+
+    function checkAnswer(idx) {
+        let stage = stages[currentStage];
+        let feedback = document.getElementById('feedback');
+        if (stage.options[idx].correct) {
+            fragments[currentStage] = true;
+            feedback.style.color = "var(--accent)";
+            feedback.innerText = "¡Correcto! Fragmento de clave obtenido.";
+            setTimeout(() => {
+                currentStage++;
+                render();
+            }, 1200);
+        } else {
+            feedback.style.color = "var(--error)";
+            feedback.innerText = "Respuesta incorrecta. Analiza de nuevo el comportamiento atómico.";
+        }
+    }
+
+    function toggleHint() {
+        let hint = document.getElementById('hint');
+        hint.style.display = hint.style.display === 'block' ? 'none' : 'block';
+    }
+
+    function resetGame() {
+        currentStage = 0;
+        fragments = [false, false, false, false, false];
+        render();
+    }
+
+    render();
+</script>
+
+</body>
+</html>
