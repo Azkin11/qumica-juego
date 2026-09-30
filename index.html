@@ -1,120 +1,1040 @@
 <!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Firewall periódico</title>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Escape Room CYTE | Carga Nuclear Efectiva</title>
 <style>
-:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:dark;--bg:#070d0a;--fg:#d8eee2;--mut:#8aa596;--pn:#101b15;--ln:#28402f;--ac:#4fe3a0;--bad:#ff6b6b;--yl:#f0c060}
-*{box-sizing:border-box}html,body{height:100%}
-body{margin:0;overscroll-behavior:none;background:var(--bg);color:var(--fg);font:16px/1.5 Georgia,serif;-webkit-user-select:none;user-select:none;touch-action:manipulation}
-#wrap{max-width:760px;margin:0 auto;padding:8px 10px}
-@media (max-width:480px){#wrap{padding:6px}#hud{font-size:13px}#fr span{padding:0 5px;margin-right:2px}}
-#hud{display:flex;justify-content:space-between;align-items:center;gap:8px;font:700 15px "Courier New",monospace;padding:4px 2px}
-#fr span{border:1px dashed var(--ln);padding:1px 7px;margin-right:4px;border-radius:4px;color:var(--mut)}#fr span.on{border-color:var(--ac);color:var(--ac)}
-#stage{position:relative;width:100%;max-width:calc((100dvh - 60px)*1.6);margin:0 auto;aspect-ratio:8/5;touch-action:none;border:2px solid var(--ln);border-radius:6px;overflow:hidden;background:#050a07}
-canvas{width:100%;height:100%;display:block;image-rendering:pixelated}
-.ov{position:fixed;inset:0;z-index:10;background:rgba(5,10,7,.97);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:calc(16px + env(safe-area-inset-top,0px)) max(18px,calc((100vw - 640px)/2)) calc(24px + env(safe-area-inset-bottom,0px));display:none;font-size:17px}.ov.on{display:block}
-@media (max-width:480px){h1{font-size:1.55rem}.ov{font-size:16px}}
-h1{font:700 1.9rem/1.1 "Courier New",monospace;margin:.2em 0 .4em;color:var(--ac)}h2{font:700 1.05rem/1.3 "Courier New",monospace;margin:0 0 .5em;color:var(--ac)}
-p{margin:.4em 0}.mut{color:var(--mut)}.tb{overflow-x:auto}table{border-collapse:collapse;font-size:.8rem;width:100%}td,th{border:1px solid var(--ln);padding:3px 6px;text-align:left}
-button{font:inherit;color:var(--fg);background:var(--pn);border:1px solid var(--ln);border-radius:6px;padding:8px 12px;cursor:pointer}
-button:focus-visible{outline:3px solid var(--ac);outline-offset:2px}
-.go{background:var(--ac);color:#04140b;border-color:var(--ac);font-weight:700}
-.opt{display:block;width:100%;text-align:left;margin:8px 0;font-size:.95rem;min-height:48px}
-button{min-height:44px}
-.og{display:grid;grid-auto-rows:1fr;gap:8px;margin:8px 0}.og .opt{margin:0;height:100%;display:flex;align-items:center}.ins{border:1px solid var(--ln);border-radius:6px;padding:8px 12px;margin:10px 0;font-size:.92rem}.opt.ok{border-color:var(--ac);background:#12331f}.opt.no{border-color:var(--bad);color:var(--mut)}
-#pad{display:none;justify-content:space-between;align-items:center;margin-top:10px;touch-action:none}
-@media (pointer:coarse),(max-width:820px){#pad{display:flex}}
-@media (orientation:landscape) and (max-height:520px){#pad{position:fixed;left:0;right:0;bottom:calc(8px + env(safe-area-inset-bottom,0px));padding:0 calc(10px + env(safe-area-inset-right,0px)) 0 calc(10px + env(safe-area-inset-left,0px));margin:0;pointer-events:none;opacity:.85;z-index:5}#pad>*{pointer-events:auto}#dp{grid-template-columns:repeat(3,48px);grid-template-rows:repeat(3,48px)}#act{width:72px;height:72px}}
-#dp{display:grid;grid-template-columns:repeat(3,58px);grid-template-rows:repeat(3,58px);gap:4px}
-#dp button,#act{padding:0;font-size:22px;touch-action:none;-webkit-tap-highlight-color:transparent}#act{width:84px;height:84px;border-radius:50%;background:var(--ac);color:#04140b;font-weight:700;font-size:16px}
-.frag{display:inline-block;font-family:"Courier New",monospace;border:1px dashed var(--ac);color:var(--ac);padding:2px 9px;border-radius:4px;margin:3px 4px 3px 0}
-.hint{color:var(--yl);margin:.5em 0}
-</style></head><body>
-<div id="wrap">
-<div id="hud"><span id="tm">15:00</span><span id="fr"></span></div>
-<div id="stage">
-<canvas id="cv" width="640" height="400"></canvas>
-<div class="ov on" id="intro"><h1>Firewall periódico</h1>
-<p><b>ALERTA en el centro de cómputo.</b> Una falla corrompió la base de datos: los elementos de los componentes electrónicos están alterados y el reciclaje inteligente está bloqueado.</p>
-<p>Eres el ingeniero de reparación. Recorre la sala, activa los <b>5 nodos</b>, resuelve cada reto de materiales (Si, Ge, Cu, Ni, Au) y recupera los fragmentos de la clave. Esquiva los <b style="color:var(--bad)">bugs</b>: cada choque te cuesta 15 s. Después, abre la puerta superior y ordena la clave.</p>
-<div class="ins"><b style="color:var(--ac)">Instrucciones · Equipo 2</b><br><b>Subtema:</b> carga nuclear efectiva (Z_eff) y apantallamiento.<br>1. Recorre la sala y activa los 5 nodos; solo puedes abrir la puerta final con los 5 fragmentos.<br>2. Cada nodo tiene una pista (úsala solo si la necesitas) y explica cada respuesta.<br>3. Si fallas, la opción se bloquea y puedes intentar otra. Los intentos y las pistas quedan registrados.<br>4. Ordena la clave final: Alfa, Beta, Gamma, Delta, Omega.<br>5. Duración: 10 a 15 minutos. El anfitrión solo puede dar las pistas programadas.</div><p class="mut">Mover: flechas o WASD. Interactuar: E, espacio o el botón. Tiempo: 15 min.</p>
-<button class="go" id="start">Iniciar misión</button></div>
-<div class="ov" id="md"></div>
+  *{margin:0;padding:0;box-sizing:border-box;
+    -webkit-tap-highlight-color:transparent;
+    user-select:none;-webkit-user-select:none;
+    -webkit-touch-callout:none}
+  :root{
+    --cyan:#00f0ff;--magenta:#ff00aa;--green:#00ff88;
+    --red:#ff3355;--yellow:#ffdd00;--bg:#0a0a12;--panel:#12121f;--border:#1f1f35;
+    --hud-h:44px;
+  }
+  html,body{height:100%;overflow:hidden;position:fixed;width:100%}
+  body{
+    font-family:'Courier New',monospace;background:var(--bg);color:#e0e0ff;
+    background-image:linear-gradient(rgba(0,240,255,.03) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(0,240,255,.03) 1px,transparent 1px);
+    background-size:40px 40px;
+    touch-action:none;
+  }
+
+  /* ===== OVERLAYS ===== */
+  .overlay{
+    position:fixed;inset:0;background:rgba(5,5,15,.97);z-index:100;
+    display:none;flex-direction:column;align-items:center;justify-content:center;
+    padding:20px 16px;text-align:center;overflow-y:auto;
+    -webkit-overflow-scrolling:touch
+  }
+  .overlay.show{display:flex;animation:fadeIn .4s ease}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  h1.title{
+    font-size:clamp(1.5rem,7vw,3rem);color:var(--cyan);
+    text-shadow:0 0 10px var(--cyan),0 0 40px var(--cyan);
+    letter-spacing:3px;margin-bottom:8px
+  }
+  h2.subtitle{
+    font-size:clamp(.75rem,3vw,1.1rem);color:var(--magenta);
+    text-shadow:0 0 10px var(--magenta);letter-spacing:2px;margin-bottom:20px
+  }
+  .story{
+    max-width:600px;width:100%;background:rgba(18,18,31,.92);
+    border:1px solid var(--border);border-left:4px solid var(--cyan);
+    padding:18px;margin-bottom:20px;text-align:left;
+    line-height:1.65;font-size:clamp(.8rem,3.5vw,.95rem);border-radius:6px
+  }
+  .story p{margin-bottom:10px}
+  .story .hl{color:var(--cyan);font-weight:bold}
+  .story .warn{color:var(--yellow);font-weight:bold}
+
+  .btn{
+    font-family:'Courier New',monospace;background:transparent;color:var(--cyan);
+    border:2px solid var(--cyan);padding:14px 28px;
+    font-size:clamp(.8rem,3.5vw,1rem);letter-spacing:2px;
+    cursor:pointer;transition:all .25s;text-transform:uppercase;
+    font-weight:bold;border-radius:6px;margin:5px;
+    min-height:48px;touch-action:manipulation
+  }
+  .btn:active{background:var(--cyan);color:var(--bg);box-shadow:0 0 20px var(--cyan)}
+  .btn.green{color:var(--green);border-color:var(--green)}
+  .btn.green:active{background:var(--green);box-shadow:0 0 20px var(--green)}
+  .btn.magenta{color:var(--magenta);border-color:var(--magenta)}
+  .btn.magenta:active{background:var(--magenta);box-shadow:0 0 20px var(--magenta)}
+  .btn.red{color:var(--red);border-color:var(--red)}
+  .btn.red:active{background:var(--red);box-shadow:0 0 20px var(--red)}
+
+  /* ===== GAME LAYOUT ===== */
+  #gameWrap{
+    display:none;position:fixed;inset:0;
+    flex-direction:column;background:var(--bg)
+  }
+  #gameWrap.show{display:flex}
+
+  #hud{
+    height:var(--hud-h);flex-shrink:0;
+    display:flex;justify-content:space-between;align-items:center;
+    padding:0 8px;background:var(--panel);
+    border-bottom:1px solid var(--border);
+    font-size:clamp(.62rem,2.6vw,.85rem);
+    gap:4px;overflow:hidden
+  }
+  #hud .item{color:var(--cyan);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #hud .item b{color:var(--yellow)}
+
+  #canvasWrap{
+    flex:1;position:relative;display:flex;
+    align-items:center;justify-content:center;
+    background:#050510;overflow:hidden;
+    min-height:0
+  }
+  #gameCanvas{
+    display:block;
+    max-width:100%;max-height:100%;
+    width:auto;height:auto;
+    image-rendering:pixelated;
+    object-fit:contain;
+    touch-action:none
+  }
+
+  #prompt{
+    position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+    padding:8px 16px;background:rgba(0,240,255,.18);
+    border:2px solid var(--cyan);color:var(--cyan);
+    font-weight:bold;border-radius:6px;letter-spacing:1px;
+    font-size:clamp(.7rem,3vw,.9rem);display:none;
+    animation:pulse 1s infinite;pointer-events:none;
+    white-space:nowrap
+  }
+  #prompt.show{display:block}
+  @keyframes pulse{
+    0%,100%{box-shadow:0 0 10px var(--cyan)}
+    50%{box-shadow:0 0 25px var(--cyan)}
+  }
+
+  /* ===== CONTROLS (d-pad + action) ===== */
+  #controls{
+    flex-shrink:0;height:clamp(150px,26vh,200px);
+    background:linear-gradient(180deg,#0d0d1a,#0a0a12);
+    border-top:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;
+    padding:8px 14px;gap:10px;
+    padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))
+  }
+
+  #dpad{
+    position:relative;width:clamp(130px,34vw,170px);
+    aspect-ratio:1;flex-shrink:0
+  }
+  #dpad button{
+    position:absolute;width:44%;height:44%;
+    background:rgba(0,240,255,.1);
+    border:2px solid var(--cyan);color:var(--cyan);
+    font-size:clamp(1.1rem,4.5vw,1.6rem);
+    border-radius:10px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:background .1s;touch-action:none;
+    font-family:'Courier New',monospace;font-weight:bold;
+    padding:0
+  }
+  #dpad button.pressed{background:var(--cyan);color:var(--bg);box-shadow:0 0 20px var(--cyan)}
+  #dpad .up{top:0;left:28%}
+  #dpad .down{bottom:0;left:28%}
+  #dpad .left{top:28%;left:0}
+  #dpad .right{top:28%;right:0}
+
+  #actionBtn{
+    width:clamp(80px,22vw,110px);height:clamp(80px,22vw,110px);
+    background:radial-gradient(circle,rgba(255,0,170,.2),rgba(255,0,170,.05));
+    border:3px solid var(--magenta);color:var(--magenta);
+    border-radius:50%;font-size:clamp(.9rem,3.5vw,1.1rem);
+    font-family:'Courier New',monospace;font-weight:bold;
+    letter-spacing:1px;cursor:pointer;flex-shrink:0;
+    display:flex;align-items:center;justify-content:center;
+    text-transform:uppercase;touch-action:none;
+    transition:transform .1s;padding:0
+  }
+  #actionBtn:active,#actionBtn.pressed{
+    background:var(--magenta);color:#fff;
+    box-shadow:0 0 25px var(--magenta);transform:scale(.94)
+  }
+
+  /* ===== MODAL ACERTIJOS ===== */
+  #modal{
+    position:fixed;inset:0;background:rgba(5,5,15,.94);z-index:200;
+    display:none;align-items:center;justify-content:center;
+    padding:12px;overflow-y:auto;-webkit-overflow-scrolling:touch
+  }
+  #modal.show{display:flex}
+  .modal-box{
+    max-width:640px;width:100%;background:#12121f;
+    border:1px solid var(--border);border-radius:10px;
+    padding:clamp(16px,4vw,26px);position:relative;
+    box-shadow:0 0 40px rgba(0,240,255,.2);
+    max-height:calc(100vh - 24px);overflow-y:auto;
+    -webkit-overflow-scrolling:touch
+  }
+  .modal-box::before{
+    content:"";position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,var(--cyan),var(--magenta));
+    border-radius:10px 10px 0 0
+  }
+  .tag{
+    display:inline-block;font-size:clamp(.6rem,2.4vw,.7rem);
+    letter-spacing:1.5px;background:rgba(0,240,255,.12);
+    color:var(--cyan);padding:3px 10px;border-radius:20px;
+    border:1px solid var(--cyan);margin-bottom:12px
+  }
+  .modal-box h3{
+    color:var(--cyan);font-size:clamp(.95rem,4vw,1.15rem);
+    margin-bottom:12px;letter-spacing:1px
+  }
+  .question{
+    background:rgba(0,0,0,.35);border-left:3px solid var(--magenta);
+    padding:12px 14px;margin-bottom:14px;border-radius:4px;
+    line-height:1.55;font-size:clamp(.8rem,3.4vw,.92rem)
+  }
+  .question b{color:var(--yellow)}
+  .options{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+  .option{
+    background:var(--panel);border:1px solid var(--border);color:#e0e0ff;
+    padding:12px 14px;text-align:left;cursor:pointer;
+    font-family:'Courier New',monospace;
+    font-size:clamp(.75rem,3.2vw,.88rem);
+    border-radius:6px;transition:all .15s;
+    min-height:48px;touch-action:manipulation;
+    line-height:1.4
+  }
+  .option:active:not(.disabled){
+    border-color:var(--cyan);background:rgba(0,240,255,.08)
+  }
+  .option.correct{border-color:var(--green);background:rgba(0,255,136,.15);color:var(--green)}
+  .option.wrong{border-color:var(--red);background:rgba(255,51,85,.15);color:var(--red)}
+  .option.disabled{cursor:not-allowed;opacity:.55}
+  .feedback{
+    margin-top:10px;padding:12px;border-radius:6px;
+    font-size:clamp(.75rem,3.2vw,.88rem);
+    line-height:1.5;display:none
+  }
+  .feedback.show{display:block;animation:fadeIn .3s}
+  .feedback.ok{background:rgba(0,255,136,.1);border-left:3px solid var(--green);color:var(--green)}
+  .feedback.err{background:rgba(255,51,85,.1);border-left:3px solid var(--red);color:var(--red)}
+  .feedback .frag{
+    margin-top:6px;font-size:clamp(.95rem,4vw,1.05rem);
+    color:var(--yellow);font-weight:bold;letter-spacing:2px
+  }
+  .hint-box{
+    margin-top:10px;padding:10px 12px;background:rgba(255,221,0,.08);
+    border-left:3px solid var(--yellow);border-radius:4px;
+    font-size:clamp(.72rem,3vw,.85rem);
+    line-height:1.5;display:none;color:#ffe680
+  }
+  .hint-box.show{display:block}
+  .modal-actions{
+    display:flex;justify-content:space-between;gap:8px;
+    margin-top:14px;flex-wrap:wrap
+  }
+  .modal-actions .btn{flex:1;min-width:110px;padding:12px 14px;font-size:.78rem}
+
+  /* ===== TRAP ===== */
+  .trap-box{
+    max-width:600px;width:100%;background:#1a0a0f;
+    border:2px solid var(--red);border-radius:10px;
+    padding:clamp(18px,4vw,28px);text-align:center;
+    box-shadow:0 0 40px rgba(255,51,85,.3);
+    max-height:calc(100vh - 24px);overflow-y:auto
+  }
+  .trap-box h1{
+    color:var(--red);text-shadow:0 0 15px var(--red);
+    letter-spacing:2px;margin-bottom:8px;
+    font-size:clamp(1.1rem,5vw,1.8rem)
+  }
+  .trap-box .warn{
+    background:rgba(255,51,85,.15);border:1px solid var(--red);
+    padding:12px;border-radius:6px;margin:12px 0;
+    color:#ff8888;line-height:1.55;
+    font-size:clamp(.78rem,3.4vw,.92rem)
+  }
+  .trap-box .fake{
+    background:rgba(255,221,0,.08);border-left:3px solid var(--yellow);
+    padding:12px;border-radius:4px;color:#ffe680;
+    line-height:1.55;font-size:clamp(.75rem,3.2vw,.9rem);
+    text-align:left
+  }
+
+  /* ===== FINAL ===== */
+  .key-input{
+    font-family:'Courier New',monospace;
+    font-size:clamp(1.1rem,5vw,1.4rem);text-align:center;
+    letter-spacing:6px;padding:12px;
+    background:var(--panel);border:2px solid var(--cyan);
+    color:var(--cyan);border-radius:6px;
+    width:min(280px,80vw);margin:12px 0;
+    text-transform:uppercase
+  }
+  .key-input:focus{outline:none;box-shadow:0 0 20px var(--cyan)}
+
+  .confetti{
+    position:fixed;width:9px;height:9px;top:-10px;z-index:9999;
+    animation:fall linear forwards;pointer-events:none
+  }
+  @keyframes fall{to{transform:translateY(105vh) rotate(720deg);opacity:0}}
+
+  /* ===== LANDSCAPE MOBILE ===== */
+  @media (orientation:landscape) and (max-height:520px){
+    #controls{
+      position:absolute;inset:0;height:100%;
+      background:transparent;border:none;
+      pointer-events:none;padding:0
+    }
+    #controls > *{pointer-events:auto}
+    #dpad{
+      position:absolute;left:12px;bottom:12px;
+      width:clamp(120px,22vh,160px);
+      height:clamp(120px,22vh,160px);
+      aspect-ratio:1
+    }
+    #actionBtn{
+      position:absolute;right:16px;bottom:20px;
+      width:clamp(76px,16vh,100px);
+      height:clamp(76px,16vh,100px)
+    }
+    #canvasWrap{flex:1}
+  }
+
+  @media (min-width:900px){
+    #controls{
+      height:170px;justify-content:space-around;padding:12px 40px
+    }
+    #dpad{width:150px;height:150px;aspect-ratio:1}
+    #actionBtn{width:110px;height:110px}
+  }
+</style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="intro" class="overlay show">
+  <h1 class="title">C.Y.T.E.</h1>
+  <h2 class="subtitle">CYBERNETIC YIELD & TESTING ELEMENT</h2>
+  <div class="story">
+    <p>🔬 <span class="hl">AÑO 2087.</span> El laboratorio orbital <b>CYTE</b> quedó sellado. Su IA entró en <span class="warn">bucle infinito</span>.</p>
+    <p>Debes <span class="hl">caminar</span> por las instalaciones y resolver los acertijos de las <b>5 cámaras reales</b>. Hay <span class="warn">3 cámaras trampa</span> con datos falsos.</p>
+    <p>⏱️ <b>15 minutos.</b> Cada error resta 15 s. Cada trampa resta 30 s.</p>
+    <p>📱 <b>Controles:</b> D-pad para moverte, botón <b>E</b> para interactuar.</p>
+  </div>
+  <button class="btn" onclick="startGame()">▶ INICIAR MISIÓN</button>
 </div>
-<div id="pad"><div id="dp"><span></span><button data-k="ArrowUp">▲</button><span></span><button data-k="ArrowLeft">◀</button><span></span><button data-k="ArrowRight">▶</button><span></span><button data-k="ArrowDown">▼</button><span></span></div><button id="act">E</button></div>
+
+<!-- GAME -->
+<div id="gameWrap">
+  <div id="hud">
+    <div class="item">📍 <b id="roomName">HUB</b></div>
+    <div class="item">⏱️ <b id="timer">15:00</b></div>
+    <div class="item">🔑 <b><span id="fragCount">0</span>/5</b></div>
+    <div class="item">⚠️ <b id="trapCount">0</b></div>
+  </div>
+
+  <div id="canvasWrap">
+    <canvas id="gameCanvas" width="960" height="600"></canvas>
+    <div id="prompt">Presiona E para interactuar</div>
+  </div>
+
+  <div id="controls">
+    <div id="dpad">
+      <button class="up"    data-dir="up"    aria-label="Arriba">▲</button>
+      <button class="left"  data-dir="left"  aria-label="Izquierda">◀</button>
+      <button class="right" data-dir="right" aria-label="Derecha">▶</button>
+      <button class="down"  data-dir="down"  aria-label="Abajo">▼</button>
+    </div>
+    <button id="actionBtn" aria-label="Interactuar">E</button>
+  </div>
 </div>
+
+<!-- MODAL ACERTIJO -->
+<div id="modal">
+  <div class="modal-box">
+    <span class="tag" id="mTag">CÁMARA 1</span>
+    <h3 id="mTitle">Título</h3>
+    <div class="question" id="mQuestion"></div>
+    <div class="options" id="mOptions"></div>
+    <div class="feedback" id="mFeedback"></div>
+    <div class="hint-box" id="mHint"></div>
+    <div class="modal-actions">
+      <button class="btn magenta" onclick="showHint()">💡 PISTA</button>
+      <button class="btn" onclick="closeModal()">CERRAR</button>
+    </div>
+  </div>
+</div>
+
+<!-- TRAP -->
+<div id="trapOverlay" class="overlay">
+  <div class="trap-box">
+    <h1>⚠️ TRAMPA ⚠️</h1>
+    <p style="color:#ff8888;font-size:.8rem;letter-spacing:2px">DATOS FALSOS DETECTADOS</p>
+    <div class="warn" id="trapWarn"></div>
+    <div class="fake" id="trapFake"></div>
+    <button class="btn red" style="margin-top:14px" onclick="closeTrap()">← CONTINUAR</button>
+  </div>
+</div>
+
+<!-- FINAL -->
+<div id="finalScreen" class="overlay">
+  <h1 class="title">🔓 LIBERADO</h1>
+  <h2 class="subtitle">INGRESA LA CLAVE FINAL</h2>
+  <div class="story" style="text-align:center">
+    <p>Reuniste los <b>5 fragmentos reales</b>. El panel central pide la clave completa.</p>
+    <p class="warn">Pista: concepto químico de 4 letras + un signo.</p>
+  </div>
+  <input type="text" class="key-input" id="finalKey" maxlength="6" placeholder="_____" autocomplete="off" autocapitalize="characters" spellcheck="false">
+  <br>
+  <button class="btn green" onclick="checkFinal()">🔐 DESBLOQUEAR</button>
+  <p id="finalMsg" style="margin-top:14px;font-size:.95rem;min-height:26px"></p>
+  <button class="btn" onclick="location.reload()" style="margin-top:12px">↻ REINICIAR</button>
+</div>
+
 <script>
-const $=s=>document.querySelector(s),cv=$("#cv"),g=cv.getContext("2d");
-const FR=["Alfa","Beta","Gamma","Delta","Omega"];
-const N=[
-{t:"Nodo 1 · El núcleo y los electrones internos",q:"El silicio (Z = 14, 1s² 2s² 2p⁶ 3s² 3p²) está en las pistas de circuitos. Con las reglas de Slater, un electrón 3p siente Z_eff ≈ 4,15, no 14. ¿Por qué?",h:"Las capas internas actúan como un escudo espacial: entre más capas intermedias, menor la fuerza neta sobre el electrón externo.",o:["Los electrones de valencia se repelen entre sí y anulan casi toda la atracción del núcleo.", "El silicio solo conserva 4 protones activos en el núcleo, por eso la carga baja.", "Los 10 electrones internos apantallan casi todo y los 3 de la capa n = 3 lo hacen en parte.", "La Z_eff es menor porque el silicio es semiconductor y no un metal de transición."],a:2,e:"S = 2(1,00) + 8(0,85) + 3(0,35) = 9,85, así que Z_eff = 14 − 9,85 = 4,15. Las capas internas aportan casi todo el escudo; los electrones de la misma capa apantallan poco (0,35)."},
-{t:"Nodo 2 · Variación en la tabla periódica",q:"Ordena de MENOR a MAYOR Z_eff (Slater) en el electrón de valencia: Si (Z=14), Ga (Z=31), Ge (Z=32).",h:"En un mismo periodo, de izquierda a derecha la carga nuclear aumenta pero el apantallamiento se mantiene casi constante.",o:["Si < Ga < Ge", "Ga < Si < Ge", "Ge < Ga < Si", "Si < Ge < Ga"],a:0,e:"Si = 4,15. Ga: S = 10 + 18(0,85) + 2(0,35) = 26,00 → 5,00. Ge: S = 26,35 → 5,65. En el periodo 4, Ga → Ge suma un protón sin más escudo. En el grupo 14, Si → Ge sube porque los electrones d apantallan poco. Slater es una aproximación, pero la tendencia se mantiene."},
-{t:"Nodo 3 · Ficha técnica de materiales",q:"Según la tabla, ¿qué elemento tiene mayor Z_eff en su electrón externo y menor radio?",h:"Cruza la configuración electrónica abreviada con Z menos los electrones internos (S).",tab:"<tr><th>Elem.</th><th>Z</th><th>Config.</th><th>Z_eff</th><th>Radio (pm)</th><th>E. ioniz. (kJ/mol)</th></tr><tr><td>Ni</td><td>28</td><td>[Ar]3d⁸4s²</td><td>4,05</td><td>124</td><td>737</td></tr><tr><td>Cu</td><td>29</td><td>[Ar]3d¹⁰4s¹</td><td>3,70</td><td>128</td><td>746</td></tr><tr><td>Au</td><td>79</td><td>[Xe]4f¹⁴5d¹⁰6s¹</td><td>3,70</td><td>144</td><td>890</td></tr>",o:["Cobre", "Oro", "Cobre y oro, por empatar", "Níquel"],a:3,e:"Ni: S = 0,35 + 16(0,85) + 10 = 23,95 → Z_eff = 4,05 y el menor radio. Cu y Au empatan en Slater, pero el oro tiene la mayor energía de ionización: los electrones 4f apantallan mal y los efectos relativistas contraen el 6s. Guarda esta pista para el Nodo 5."},
-{t:"Nodo 4 · Caso real: e-waste y lixiviación",q:"En una planta de reciclaje, el cobre de una placa se disuelve en ácido nítrico, pero el oro no y exige agua regia o cianuro. ¿Qué lo explica mejor?",h:"La energía de ionización, ligada a la Z_eff, determina qué tan fácil cede electrones un metal.",o:["El oro tiene menos protones que el cobre, por eso reacciona con menos cantidad de ácido.", "El oro retiene más su electrón 6s (mayor energía de ionización); necesita oxidante fuerte y ligante.", "El cobre tiene mayor Z_eff que el oro, así que le cuesta más oxidarse en ácido nítrico.", "El oro no posee electrones de valencia, por lo que ningún ácido puede interactuar con él."],a:1,e:"Au: 890 kJ/mol contra 746 del Cu. El agua regia (HNO₃ + HCl) resuelve ambas cosas: el nitrato oxida y el cloruro forma [AuCl₄]⁻, que estabiliza el ion. En el dopaje del silicio la lógica es similar: la Z_eff de la impureza (B, P) fija cuánto cuesta ceder o aceptar electrones."},
-{t:"Nodo 5 · Síntesis: contracción lantánida",q:"Ag (Z=47, periodo 5) y Au (Z=79, periodo 6) tienen radios casi iguales (≈144 pm) aunque el oro tiene una capa más. ¿Por qué?",h:"Los electrones d y f apantallan muy mal: la Z_eff efectiva sube de forma abrupta.",o:["El oro pierde su capa 6s completa y por eso su radio se reduce hasta igualar al de la plata.", "Los electrones f apantallan mejor que los s y p, así el núcleo atrae menos y el átomo encoge.", "Los 4f y 5d apantallan mal, la Z_eff sube y contrae el átomo (contracción lantánida y relativista).", "Ambos están en el mismo grupo, por lo que comparten la misma Z_eff y el mismo radio exacto."],a:2,e:"Entre Ag y Au se suman 32 protones, pero los 4f y 5d escudan pobremente al 6s. Resultado: mayor Z_eff y menor radio. Por eso el oro resiste la corrosión (ideal para contactos) y es difícil de lixiviar."}
-];
-// Mapa
-const walls=[[0,0,640,16],[0,384,640,16],[0,0,16,400],[624,0,16,400],[140,110,70,16],[430,110,70,16],[140,270,70,16],[430,270,70,16],[290,175,60,40]];
-const T=[{x:56,y:56},{x:556,y:56},{x:56,y:326},{x:556,y:326},{x:300,y:326}].map((t,i)=>({...t,i,done:false}));
-const DOOR={x:298,y:16,w:44,h:18};
-let P,B,keys={},got=[],errs=0,hints=0,state="intro",tEnd,inv=0,near=null,seq=[];
-function reset(){P={x:310,y:236,s:14};B=[{x:120,y:190,vx:1.3,vy:0},{x:500,y:200,vx:0,vy:1.4},{x:320,y:80,vx:1.1,vy:0}].map(b=>({...b,s:14}));}
-const hit=(x,y,s,r)=>x<r[0]+r[2]&&x+s>r[0]&&y<r[1]+r[3]&&y+s>r[1];
-const blocked=(x,y,s)=>walls.some(r=>hit(x,y,s,r));
-function step(){
- let dx=(keys.ArrowRight||keys.d?1:0)-(keys.ArrowLeft||keys.a?1:0),dy=(keys.ArrowDown||keys.s?1:0)-(keys.ArrowUp||keys.w?1:0);
- if(dx&&dy){dx*=.71;dy*=.71}
- const sp=2.4;if(!blocked(P.x+dx*sp,P.y,P.s))P.x+=dx*sp;if(!blocked(P.x,P.y+dy*sp,P.s))P.y+=dy*sp;
- B.forEach(b=>{if(blocked(b.x+b.vx,b.y,b.s))b.vx*=-1;else b.x+=b.vx;if(blocked(b.x,b.y+b.vy,b.s))b.vy*=-1;else b.y+=b.vy;
-  if(!inv&&hit(P.x,P.y,P.s,[b.x,b.y,b.s,b.s])){tEnd-=15000;inv=70;P.x=310;P.y=236}});
- if(inv)inv--;
- near=null;T.forEach(t=>{if(!t.done&&Math.hypot(P.x+7-(t.x+15),P.y+7-(t.y+15))<38)near=t});
- if(!near&&Math.hypot(P.x+7-(DOOR.x+22),P.y+7-(DOOR.y+9))<44)near="door";
- if(tEnd-Date.now()<=0)end(false);
+/* ================================================================
+   ESCAPE ROOM C.Y.T.E. — Mobile + Genially
+   ================================================================ */
+
+const W = 960, H = 600;
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+/* ============ RESIZE CANVAS (responsive) ============ */
+function resizeCanvas(){
+  const wrap = document.getElementById('canvasWrap');
+  const availW = wrap.clientWidth;
+  const availH = wrap.clientHeight;
+  const scale = Math.min(availW / W, availH / H);
+  const cssW = Math.floor(W * scale);
+  const cssH = Math.floor(H * scale);
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.floor(W * dpr);
+  canvas.height = Math.floor(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
+window.addEventListener('resize', resizeCanvas);
+window.addEventListener('orientationchange', ()=>setTimeout(resizeCanvas, 250));
+
+/* ============ ACERTIJOS ============ */
+const puzzles = {
+  cam1:{
+    tag:'CÁMARA 1 · ACTIVACIÓN', title:'Reconocer conceptos esenciales',
+    question:'¿Cuál afirmación sobre la <b>carga nuclear efectiva (Z<sub>eff</sub>)</b> es <b>FALSA</b>?',
+    options:[
+      'Es la carga positiva neta que siente un electrón tras el apantallamiento.',
+      'Se calcula como Z<sub>eff</sub> = Z − S.',
+      'Es siempre igual al número atómico Z.',
+      'Aumenta de izquierda a derecha en un período.'],
+    correct:2,
+    hint:'Los electrones internos "bloquean" parte de la carga. ¿El electrón de valencia siente TODA la carga?',
+    explanation:'Z<sub>eff</sub> NUNCA es igual a Z porque el apantallamiento (S) siempre reduce la carga efectiva. Como S > 0, entonces Z<sub>eff</sub> < Z.',
+    frag:'Z'
+  },
+  cam2:{
+    tag:'CÁMARA 2 · DIAGNÓSTICO', title:'Detectar el dato incorrecto',
+    question:'Según las <b>reglas de Slater</b>, ¿qué valor de apantallamiento es <b>INCORRECTO</b>?',
+    options:[
+      'Mismo grupo (ns, np): 0.35',
+      'Capa n−1: 0.85',
+      'Capas n−2 o menores: 0.85',
+      '1s apantallando a otro 1s: 0.30'],
+    correct:2,
+    hint:'Los electrones de capas muy internas están cerca del núcleo. ¿Apantallan poco o mucho?',
+    explanation:'Los electrones de capas n−2 o menores apantallan <b>1.00</b> (total), no 0.85.',
+    frag:'E'
+  },
+  cam3:{
+    tag:'CÁMARA 3 · ANÁLISIS', title:'Interpretar tendencias periódicas',
+    question:'Ordena de <b>MENOR a MAYOR</b> Z<sub>eff</sub>: <b>Na, Mg, Al, Si</b>',
+    options:['Si < Al < Mg < Na','Na < Mg < Al < Si','Mg < Na < Si < Al','Al < Si < Na < Mg'],
+    correct:1,
+    hint:'Mismo período. Al ir a la derecha, Z crece pero el apantallamiento entre electrones del mismo nivel es mínimo.',
+    explanation:'En un mismo período, Z<sub>eff</sub> aumenta de izquierda a derecha: Na < Mg < Al < Si.',
+    frag:'F'
+  },
+  cam4:{
+    tag:'CÁMARA 4 · APLICACIÓN', title:'Caso de ingeniería',
+    question:'¿Qué elemento elegirías para el <b>filamento de una bombilla incandescente</b>?',
+    options:['Aluminio (Al)','Plomo (Pb)','Wolframio (W)','Mercurio (Hg)'],
+    correct:2,
+    hint:'Busca el metal con el punto de fusión más alto de la tabla periódica (3422 °C).',
+    explanation:'El <b>wolframio (W)</b> tiene el punto de fusión más alto (3422 °C). Se usa en filamentos de bombillas.',
+    frag:'F'
+  },
+  cam5:{
+    tag:'CÁMARA 5 · VERIFICACIÓN', title:'Integrar y justificar',
+    question:'¿Por qué el <b>K</b> tiene menor energía de ionización que el <b>Na</b>?',
+    options:[
+      'El K tiene mayor Z<sub>eff</sub> que el Na.',
+      'El electrón de valencia del K está más lejos y siente menor Z<sub>eff</sub>.',
+      'El K tiene menos electrones internos.',
+      'El K no tiene apantallamiento.'],
+    correct:1,
+    hint:'Aunque el K tiene más protones, tiene más capas internas. Su electrón 4s está más lejos que el 3s del Na.',
+    explanation:'El K tiene más capas internas que apantallan y su electrón de valencia está más alejado del núcleo → menor Z<sub>eff</sub> efectiva.',
+    frag:'!'
+  }
+};
+
+/* ============ TRAMPAS ============ */
+const trapsData = {
+  trap1:{
+    warn:'Laboratorio con <b>TABLA PERIÓDICA FALSIFICADA</b>. Su información NO es fiable.',
+    fake:'📄 "Según nuestros cálculos, Z<sub>eff</sub> del sodio es 11 (toda la carga del núcleo)."<br><br>🚫 <b>¡FALSO!</b> El apantallamiento de los 10 electrones internos reduce Z<sub>eff</sub> a ≈ 2.20.'
+  },
+  trap2:{
+    warn:'Archivos corruptos. Contienen una <b>FÓRMULA INVENTADA</b>.',
+    fake:'📄 "Fórmula oficial: Z<sub>eff</sub> = Z + S"<br><br>🚫 <b>¡INCORRECTO!</b> La fórmula real es Z<sub>eff</sub> = Z − S.'
+  },
+  trap3:{
+    warn:'Servidor con <b>DATOS INVERTIDOS</b> sobre tendencias periódicas.',
+    fake:'📄 "Z<sub>eff</sub> disminuye al avanzar de izquierda a derecha."<br><br>🚫 <b>¡FALSO!</b> Z<sub>eff</sub> AUMENTA de izquierda a derecha.'
+  }
+};
+
+/* ============ HABITACIONES ============ */
+const T = 20;
+function simpleWalls(){
+  return [
+    {x:0, y:0, w:W, h:T},
+    {x:0, y:0, w:T, h:H},
+    {x:W-T, y:0, w:T, h:H},
+    {x:0, y:H-T, w:430, h:T},
+    {x:530, y:H-T, w:430, h:T}
+  ];
+}
+
+const rooms = {
+  hub:{
+    id:'hub', name:'CENTRO DE CONTROL',
+    walls:[
+      {x:0,y:0,w:120,h:T},{x:210,y:0,w:120,h:T},{x:420,y:0,w:120,h:T},
+      {x:630,y:0,w:120,h:T},{x:840,y:0,w:120,h:T},
+      {x:0,y:H-T,w:120,h:T},{x:210,y:H-T,w:120,h:T},{x:420,y:H-T,w:120,h:T},
+      {x:630,y:H-T,w:120,h:T},{x:840,y:H-T,w:120,h:T},
+      {x:0,y:0,w:T,h:H},{x:W-T,y:0,w:T,h:H}
+    ],
+    doors:[
+      {x:120,y:0,w:90,h:55,target:'cam1',label:'CÁM 1'},
+      {x:330,y:0,w:90,h:55,target:'trap1',label:'LAB-0X'},
+      {x:540,y:0,w:90,h:55,target:'cam2',label:'CÁM 2'},
+      {x:750,y:0,w:90,h:55,target:'trap2',label:'ARCH-2'},
+      {x:120,y:H-55,w:90,h:55,target:'cam3',label:'CÁM 3'},
+      {x:330,y:H-55,w:90,h:55,target:'trap3',label:'SERV-9'},
+      {x:540,y:H-55,w:90,h:55,target:'cam4',label:'CÁM 4'},
+      {x:750,y:H-55,w:90,h:55,target:'cam5',label:'CÁM 5'}
+    ],
+    objects:[], spawn:{x:450, y:280}
+  },
+  cam1:{
+    id:'cam1', name:'CÁMARA 1 · ACTIVACIÓN',
+    walls:simpleWalls(),
+    doors:[{x:430,y:H-55,w:100,h:55,target:'hub',label:'VOLVER',returnIdx:0}],
+    objects:[{x:400,y:220,w:160,h:110,type:'terminal',puzzle:'cam1',label:'TERMINAL 1'}],
+    spawn:{x:450,y:420}
+  },
+  cam2:{
+    id:'cam2', name:'CÁMARA 2 · DIAGNÓSTICO',
+    walls:simpleWalls(),
+    doors:[{x:430,y:H-55,w:100,h:55,target:'hub',label:'VOLVER',returnIdx:2}],
+    objects:[{x:400,y:220,w:160,h:110,type:'terminal',puzzle:'cam2',label:'TERMINAL 2'}],
+    spawn:{x:450,y:420}
+  },
+  cam3:{
+    id:'cam3', name:'CÁMARA 3 · ANÁLISIS',
+    walls:simpleWalls(),
+    doors:[{x:430,y:H-55,w:100,h:55,target:'hub',label:'VOLVER',returnIdx:4}],
+    objects:[{x:400,y:220,w:160,h:110,type:'terminal',puzzle:'cam3',label:'TERMINAL 3'}],
+    spawn:{x:450,y:420}
+  },
+  cam4:{
+    id:'cam4', name:'CÁMARA 4 · APLICACIÓN',
+    walls:simpleWalls(),
+    doors:[{x:430,y:H-55,w:100,h:55,target:'hub',label:'VOLVER',returnIdx:6}],
+    objects:[{x:400,y:220,w:160,h:110,type:'terminal',puzzle:'cam4',label:'TERMINAL 4'}],
+    spawn:{x:450,y:420}
+  },
+  cam5:{
+    id:'cam5', name:'CÁMARA 5 · VERIFICACIÓN',
+    walls:simpleWalls(),
+    doors:[{x:430,y:H-55,w:100,h:55,target:'hub',label:'VOLVER',returnIdx:7}],
+    objects:[{x:400,y:220,w:160,h:110,type:'terminal',puzzle:'cam5',label:'TERMINAL 5'}],
+    spawn:{x:450,y:420}
+  },
+  trap1:{
+    id:'trap1', name:'LAB-0X · TRAMPA',
+    walls:simpleWalls(),
+    doors:[{x:430,y:H-55,w:100,h:55,target:'hub',label:'VOLVER',returnIdx:1}],
+    objects:[{x:400,y:220,w:160,h:110,type:'console',trap:'trap1',label:'CONSOLA SOSPECHOSA'}],
+    spawn:{x:450,y:420}
+  },
+  trap2:{
+    id:'trap2', name:'ARCH-2 · TRAMPA',
+    walls:simpleWalls(),
+    doors:[{x:430,y:H-55,w:100,h:55,target:'hub',label:'VOLVER',returnIdx:3}],
+    objects:[{x:400,y:220,w:160,h:110,type:'console',trap:'trap2',label:'ARCHIVO CORRUPTO'}],
+    spawn:{x:450,y:420}
+  },
+  trap3:{
+    id:'trap3', name:'SERV-9 · TRAMPA',
+    walls:simpleWalls(),
+    doors:[{x:430,y:H-55,w:100,h:55,target:'hub',label:'VOLVER',returnIdx:5}],
+    objects:[{x:400,y:220,w:160,h:110,type:'console',trap:'trap3',label:'SERVIDOR SOSPECHOSO'}],
+    spawn:{x:450,y:420}
+  }
+};
+
+/* ============ ESTADO ============ */
+let currentRoom = 'hub';
+const player = {x:450, y:280, w:34, h:34, speed:4.2, dir:'down'};
+const keys = {up:false, down:false, left:false, right:false};
+let nearObject = null;
+let transitionCooldown = 0;
+let gameActive = false;
+let secondsLeft = 15 * 60;
+let timerInterval = null;
+let currentPuzzle = null;
+let currentObject = null;
+
+const fragments = {cam1:false, cam2:false, cam3:false, cam4:false, cam5:false};
+const trapsVisited = {trap1:false, trap2:false, trap3:false};
+
+/* ============ INICIO ============ */
+function startGame(){
+  document.getElementById('intro').classList.remove('show');
+  document.getElementById('gameWrap').classList.add('show');
+  resizeCanvas();
+  gameActive = true;
+  loadRoom('hub');
+  startTimer();
+  requestAnimationFrame(loop);
+}
+
+function startTimer(){
+  if(timerInterval) clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    if(!gameActive) return;
+    secondsLeft--;
+    if(secondsLeft <= 0){
+      clearInterval(timerInterval);
+      alert('⏱️ ¡TIEMPO AGOTADO! Reiniciando el sistema...');
+      location.reload();
+    }
+    updateHUD();
+  }, 1000);
+}
+
+function updateHUD(){
+  const m = String(Math.floor(secondsLeft/60)).padStart(2,'0');
+  const s = String(secondsLeft%60).padStart(2,'0');
+  document.getElementById('timer').textContent = `${m}:${s}`;
+  document.getElementById('fragCount').textContent = Object.values(fragments).filter(Boolean).length;
+  document.getElementById('trapCount').textContent = Object.values(trapsVisited).filter(Boolean).length;
+  document.getElementById('roomName').textContent = rooms[currentRoom].name;
+}
+
+/* ============ INPUT TECLADO (desktop) ============ */
+document.addEventListener('keydown', e=>{
+  const k = e.key.toLowerCase();
+  if(k === 'w' || k === 'arrowup') keys.up = true;
+  if(k === 's' || k === 'arrowdown') keys.down = true;
+  if(k === 'a' || k === 'arrowleft') keys.left = true;
+  if(k === 'd' || k === 'arrowright') keys.right = true;
+  if(['arrowup','arrowdown','arrowleft','arrowright',' '].includes(k)) e.preventDefault();
+  if(k === 'e' && gameActive && !document.getElementById('modal').classList.contains('show')){
+    interact();
+  }
+});
+document.addEventListener('keyup', e=>{
+  const k = e.key.toLowerCase();
+  if(k === 'w' || k === 'arrowup') keys.up = false;
+  if(k === 's' || k === 'arrowdown') keys.down = false;
+  if(k === 'a' || k === 'arrowleft') keys.left = false;
+  if(k === 'd' || k === 'arrowright') keys.right = false;
+});
+
+/* ============ INPUT TÁCTIL (D-Pad + acción) ============ */
+(function bindDpad(){
+  document.querySelectorAll('#dpad button').forEach(btn=>{
+    const dir = btn.dataset.dir;
+    const press = (on) => {
+      keys[dir] = on;
+      btn.classList.toggle('pressed', on);
+    };
+    // Touch
+    btn.addEventListener('touchstart', e=>{e.preventDefault(); press(true);}, {passive:false});
+    btn.addEventListener('touchend',   e=>{e.preventDefault(); press(false);}, {passive:false});
+    btn.addEventListener('touchcancel',()=>press(false));
+    // Mouse
+    btn.addEventListener('mousedown', ()=>press(true));
+    btn.addEventListener('mouseup',   ()=>press(false));
+    btn.addEventListener('mouseleave',()=>press(false));
+    btn.addEventListener('contextmenu', e=>e.preventDefault());
+  });
+  const ab = document.getElementById('actionBtn');
+  const trigger = e=>{
+    e.preventDefault();
+    ab.classList.add('pressed');
+    setTimeout(()=>ab.classList.remove('pressed'), 120);
+    if(gameActive && !document.getElementById('modal').classList.contains('show')) interact();
+  };
+  ab.addEventListener('touchstart', trigger, {passive:false});
+  ab.addEventListener('click', (e)=>{
+    // Si ya se manejó por touchstart, evitar doble disparo
+    if(e.detail === 0) trigger(e);
+  });
+  ab.addEventListener('contextmenu', e=>e.preventDefault());
+})();
+
+/* ============ CARGA DE HABITACIÓN ============ */
+function loadRoom(id){
+  currentRoom = id;
+  const r = rooms[id];
+  player.x = r.spawn.x;
+  player.y = r.spawn.y;
+  transitionCooldown = 0.5;
+  updateHUD();
+}
+
+/* ============ COLISIONES ============ */
+function overlap(a, b){
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+function collides(x, y){
+  const r = {x, y, w:player.w, h:player.h};
+  for(const w of rooms[currentRoom].walls) if(overlap(r, w)) return true;
+  return false;
+}
+
+/* ============ UPDATE ============ */
+function update(dt){
+  if(!gameActive) return;
+  if(transitionCooldown > 0) transitionCooldown -= dt;
+
+  let vx = 0, vy = 0;
+  if(keys.up) vy -= 1;
+  if(keys.down) vy += 1;
+  if(keys.left) vx -= 1;
+  if(keys.right) vx += 1;
+
+  const len = Math.hypot(vx, vy);
+  if(len > 0){
+    vx /= len; vy /= len;
+    if(vy < 0) player.dir = 'up';
+    else if(vy > 0) player.dir = 'down';
+    else if(vx < 0) player.dir = 'left';
+    else if(vx > 0) player.dir = 'right';
+  }
+
+  const step = player.speed * (dt * 60);
+  const nx = player.x + vx * step;
+  const ny = player.y + vy * step;
+
+  if(!collides(nx, player.y)) player.x = nx;
+  if(!collides(player.x, ny)) player.y = ny;
+
+  player.x = Math.max(0, Math.min(W - player.w, player.x));
+  player.y = Math.max(0, Math.min(H - player.h, player.y));
+
+  if(transitionCooldown <= 0){
+    for(const d of rooms[currentRoom].doors){
+      if(overlap({x:player.x, y:player.y, w:player.w, h:player.h}, d)){
+        enterDoor(d); return;
+      }
+    }
+  }
+
+  nearObject = null;
+  const cx = player.x + player.w/2, cy = player.y + player.h/2;
+  for(const o of rooms[currentRoom].objects){
+    const ox = o.x + o.w/2, oy = o.y + o.h/2;
+    if(Math.hypot(cx - ox, cy - oy) < 110){ nearObject = o; break; }
+  }
+  document.getElementById('prompt').classList.toggle('show', !!nearObject);
+}
+
+function enterDoor(d){
+  transitionCooldown = 0.9;
+  if(d.target === 'hub' && d.returnIdx !== undefined){
+    const hubDoor = rooms.hub.doors[d.returnIdx];
+    currentRoom = 'hub';
+    if(hubDoor.y < 100){
+      player.x = hubDoor.x + hubDoor.w/2 - player.w/2;
+      player.y = hubDoor.y + hubDoor.h + 25;
+    } else {
+      player.x = hubDoor.x + hubDoor.w/2 - player.w/2;
+      player.y = hubDoor.y - player.h - 25;
+    }
+  } else loadRoom(d.target);
+  updateHUD();
+}
+
+/* ============ INTERACCIÓN ============ */
+function interact(){
+  if(!nearObject) return;
+  if(nearObject.type === 'terminal'){
+    if(fragments[nearObject.puzzle]) return;
+    openPuzzle(nearObject);
+  } else if(nearObject.type === 'console'){
+    showTrap(nearObject.trap);
+  }
+}
+
+/* ============ MODAL ============ */
+function openPuzzle(obj){
+  currentObject = obj;
+  currentPuzzle = puzzles[obj.puzzle];
+  gameActive = false;
+
+  document.getElementById('mTag').textContent = currentPuzzle.tag;
+  document.getElementById('mTitle').textContent = currentPuzzle.title;
+  document.getElementById('mQuestion').innerHTML = currentPuzzle.question;
+
+  const opts = document.getElementById('mOptions');
+  opts.innerHTML = '';
+  currentPuzzle.options.forEach((o, i)=>{
+    const b = document.createElement('button');
+    b.className = 'option';
+    b.innerHTML = o;
+    b.onclick = ()=>selectOption(i, b);
+    opts.appendChild(b);
+  });
+
+  const fb = document.getElementById('mFeedback');
+  fb.className = 'feedback'; fb.innerHTML = '';
+  document.getElementById('mHint').className = 'hint-box';
+  document.getElementById('mHint').innerHTML = '💡 <b>PISTA:</b> ' + currentPuzzle.hint;
+
+  document.getElementById('modal').classList.add('show');
+}
+
+function selectOption(i, btn){
+  if(btn.classList.contains('disabled')) return;
+  const p = currentPuzzle;
+  const fb = document.getElementById('mFeedback');
+  const opts = document.querySelectorAll('#mOptions .option');
+
+  if(i === p.correct){
+    opts.forEach(o=>o.classList.add('disabled'));
+    btn.classList.add('correct');
+    fb.className = 'feedback ok show';
+    fb.innerHTML = `✅ <b>¡ACCESO CONCEDIDO!</b><br>${p.explanation}
+      <div class="frag">🔑 Fragmento obtenido: <b>${p.frag}</b></div>`;
+    fragments[currentObject.puzzle] = true;
+    updateHUD(); checkWin();
+  } else {
+    btn.classList.add('wrong','disabled');
+    secondsLeft = Math.max(0, secondsLeft - 15);
+    updateHUD();
+    fb.className = 'feedback err show';
+    fb.innerHTML = `❌ <b>ACCESO DENEGADO.</b><br>
+      La opción seleccionada es incorrecta. <b>NO se revelará la correcta.</b><br>
+      Vuelve a intentarlo con otra opción o pide una pista.<br>
+      <i style="color:#ff8888">Penalización: −15 segundos.</i>`;
+  }
+}
+
+function showHint(){ document.getElementById('mHint').classList.add('show'); }
+
+function closeModal(){
+  document.getElementById('modal').classList.remove('show');
+  gameActive = true;
+  if(currentObject && fragments[currentObject.puzzle]) currentObject.done = true;
+  currentObject = null; currentPuzzle = null;
+}
+
+/* ============ TRAMPA ============ */
+function showTrap(id){
+  if(!trapsVisited[id]){
+    trapsVisited[id] = true;
+    secondsLeft = Math.max(0, secondsLeft - 30);
+    updateHUD();
+  }
+  const t = trapsData[id];
+  document.getElementById('trapWarn').innerHTML = '🚨 ' + t.warn;
+  document.getElementById('trapFake').innerHTML = t.fake;
+  gameActive = false;
+  document.getElementById('trapOverlay').classList.add('show');
+}
+function closeTrap(){
+  document.getElementById('trapOverlay').classList.remove('show');
+  gameActive = true;
+}
+
+/* ============ FINAL ============ */
+function checkWin(){
+  if(Object.values(fragments).every(Boolean)){
+    setTimeout(()=>{
+      gameActive = false;
+      clearInterval(timerInterval);
+      document.getElementById('finalScreen').classList.add('show');
+    }, 900);
+  }
+}
+
+function checkFinal(){
+  const v = document.getElementById('finalKey').value.trim().toUpperCase();
+  const msg = document.getElementById('finalMsg');
+  if(v === 'ZEFF!'){
+    msg.style.color = '#00ff88';
+    msg.innerHTML = '🎉 <b>¡CLAVE CORRECTA!</b> C.Y.T.E. ha sido liberado. ¡Felicidades, operador!';
+    confetti();
+  } else {
+    msg.style.color = '#ff3355';
+    msg.innerHTML = '❌ Clave incorrecta. Revisa tus fragmentos: un concepto químico de 4 letras + un signo.';
+  }
+}
+
+function confetti(){
+  const colors = ['#00f0ff','#ff00aa','#00ff88','#ffdd00','#ff3355'];
+  for(let i=0;i<100;i++){
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random()*100 + 'vw';
+    c.style.background = colors[Math.floor(Math.random()*colors.length)];
+    c.style.animationDuration = (2 + Math.random()*2) + 's';
+    c.style.animationDelay = Math.random()*0.6 + 's';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 5500);
+  }
+}
+
+/* ============ RENDER ============ */
 function draw(){
- g.fillStyle="#050a07";g.fillRect(0,0,640,400);
- g.strokeStyle="#0f2116";g.lineWidth=1;for(let i=0;i<640;i+=32){g.beginPath();g.moveTo(i,0);g.lineTo(i,400);g.stroke()}for(let j=0;j<400;j+=32){g.beginPath();g.moveTo(0,j);g.lineTo(640,j);g.stroke()}
- walls.forEach(r=>{g.fillStyle="#173323";g.fillRect(...r);g.strokeStyle="#4fe3a0";g.strokeRect(r[0]+.5,r[1]+.5,r[2]-1,r[3]-1)});
- const open=got.length==5;g.fillStyle=open?"#4fe3a0":"#5a1f1f";g.fillRect(DOOR.x,DOOR.y,DOOR.w,DOOR.h);
- g.fillStyle="#04140b";g.font="bold 11px monospace";g.textAlign="center";g.fillText(open?"ABIERTA":"CLAVE",DOOR.x+22,DOOR.y+13);
- T.forEach(t=>{g.fillStyle=t.done?"#1a4a30":"#0d2a4a";g.fillRect(t.x,t.y,30,30);g.strokeStyle=t.done?"#4fe3a0":(near===t?"#f0c060":"#5ab0ff");g.lineWidth=2;g.strokeRect(t.x,t.y,30,30);g.fillStyle=t.done?"#4fe3a0":"#cfe8ff";g.font="bold 13px monospace";g.fillText(t.done?"✓":"N"+(t.i+1),t.x+15,t.y+20)});
- B.forEach(b=>{const j=Math.random()*3;g.fillStyle="#ff4d4d";g.fillRect(b.x+j,b.y,b.s,b.s);g.fillStyle="#050a07";g.fillRect(b.x+3+j,b.y+4,3,3);g.fillRect(b.x+9+j,b.y+4,3,3)});
- if(!(inv&&inv%10<5)){g.fillStyle="#4fe3a0";g.fillRect(P.x,P.y,P.s,P.s);g.fillStyle="#04140b";g.fillRect(P.x+3,P.y+3,8,8);g.fillStyle="#4fe3a0";g.fillRect(P.x+6,P.y+6,2,2)}
- if(near){g.fillStyle="#f0c060";g.font="bold 12px monospace";const x=near==="door"?DOOR.x+22:near.x+15,y=near==="door"?DOOR.y+38:near.y-6;g.fillText("[E] "+(near==="door"?"Terminal final":"Activar nodo"),x,y)}
+  const r = rooms[currentRoom];
+  ctx.fillStyle = '#050510';
+  ctx.fillRect(0, 0, W, H);
+
+  // rejilla
+  ctx.strokeStyle = 'rgba(0,240,255,0.06)';
+  ctx.lineWidth = 1;
+  for(let x=0; x<W; x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0; y<H; y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+
+  // puertas
+  for(const d of r.doors){
+    const pulse = 0.6 + 0.4 * Math.sin(Date.now()/300);
+    ctx.fillStyle = `rgba(0,255,136,${0.15 + pulse*0.15})`;
+    ctx.fillRect(d.x, d.y, d.w, d.h);
+    ctx.strokeStyle = `rgba(0,255,136,${pulse})`;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(d.x, d.y, d.w, d.h);
+    ctx.fillStyle = '#00ff88';
+    ctx.font = 'bold 13px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(d.label, d.x + d.w/2, d.y + d.h/2 + 5);
+  }
+
+  // objetos
+  for(const o of r.objects){
+    const solved = o.puzzle && fragments[o.puzzle];
+    const isTrap = o.type === 'console';
+    const baseColor = isTrap ? '#ff8800' : '#ff00aa';
+    const glowColor = solved ? '#00ff88' : baseColor;
+
+    ctx.fillStyle = '#12121f';
+    ctx.fillRect(o.x, o.y, o.w, o.h);
+    ctx.strokeStyle = glowColor;
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(o.x, o.y, o.w, o.h);
+
+    const pulse = 0.5 + 0.5 * Math.sin(Date.now()/400);
+    if(isTrap){
+      ctx.fillStyle = `rgba(255,136,0,${0.2 + pulse*0.2})`;
+    } else if(solved){
+      ctx.fillStyle = `rgba(0,255,136,${0.2 + pulse*0.15})`;
+    } else {
+      ctx.fillStyle = `rgba(255,0,170,${0.2 + pulse*0.2})`;
+    }
+    ctx.fillRect(o.x+12, o.y+12, o.w-24, o.h*0.55);
+
+    ctx.fillStyle = solved ? '#00ff88' : (isTrap ? '#ff8800' : '#ff00aa');
+    ctx.font = 'bold 14px monospace';
+    ctx.textAlign = 'center';
+    const txt = solved ? '✓ RESUELTO' : (isTrap ? '⚠ SOSPECHOSO' : '⌨ ACTIVO');
+    ctx.fillText(txt, o.x + o.w/2, o.y + o.h*0.42);
+
+    ctx.fillStyle = '#888';
+    ctx.font = '11px monospace';
+    ctx.fillText(o.label, o.x + o.w/2, o.y + o.h + 16);
+  }
+
+  // paredes
+  for(const w of r.walls){
+    const grad = ctx.createLinearGradient(w.x, w.y, w.x, w.y + w.h);
+    grad.addColorStop(0, '#1a1a2e');
+    grad.addColorStop(1, '#0d0d1a');
+    ctx.fillStyle = grad;
+    ctx.fillRect(w.x, w.y, w.w, w.h);
+    ctx.strokeStyle = 'rgba(0,240,255,0.5)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(w.x+0.5, w.y+0.5, w.w-1, w.h-1);
+  }
+
+  drawPlayer();
 }
-function loop(){if(state==="play"){step();draw();hud()}requestAnimationFrame(loop)}
-function hud(){const s=Math.max(0,Math.ceil((tEnd-Date.now())/1000));$("#tm").textContent=String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
- $("#tm").style.color=s<120?"var(--bad)":"var(--fg)";
- $("#fr").innerHTML=FR.map((f,i)=>`<span class="${got.includes(f)?"on":""}">${got.includes(f)?f:"?"}</span>`).join("")}
-function ov(h){const m=$("#md");m.innerHTML=h;m.classList.add("on");m.scrollTop=0}
-function close(){$("#md").classList.remove("on");state="play"}
-function act(){if(state!=="play"||!near)return;state="pause";keys={};near==="door"?door():node(near)}
-function node(t){const n=N[t.i];
- ov(`<h2>${n.t}</h2><p>${n.q}</p>${n.tab?'<div class="tb"><table>'+n.tab+'</table></div>':""}<div class="og">${n.o.map((o,i)=>`<button class="opt" data-i="${i}">${o}</button>`).join("")}</div><button id="hb">Pista</button><button id="ex" style="float:right">Salir del nodo</button><div class="hint" id="hn"></div><div id="fb"></div>`);
- $("#ex").onclick=close;
- $("#hb").onclick=()=>{if(!$("#hn").textContent)hints++;$("#hn").textContent="Pista: "+n.h};
- document.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{const i=+b.dataset.i;
-  if(i===n.a){document.querySelectorAll(".opt").forEach(x=>x.disabled=true);b.classList.add("ok");t.done=true;got.push(FR[t.i]);
-   $("#fb").innerHTML=`<p style="color:var(--ac)"><b>Correcto. Fragmento [${FR[t.i]}] recuperado.</b></p><p>${n.e}</p><button class="go" id="cn">Continuar</button>`;$("#cn").onclick=close}
-  else{errs++;b.classList.add("no");b.disabled=true;$("#fb").innerHTML=`<p style="color:var(--bad)"><b>Incorrecto.</b> Usa la pista y prueba otra opción.</p>`}})}
-function door(){seq=[];
- if(got.length<5){ov(`<h2>Terminal final bloqueada</h2><p>Tienes ${got.length} de 5 fragmentos. Activa todos los nodos.</p><button class="go" id="cn">Volver</button>`);$("#cn").onclick=close;return}
- ov(`<h2>Terminal de desbloqueo</h2><p>Ingresa la clave con los fragmentos en el orden de los nodos (Alfa → Omega).</p><div id="sq" style="min-height:40px"></div><div>${[...FR].reverse().map(f=>`<button data-f="${f}" style="margin:4px 4px 4px 0">[${f}]</button>`).join("")}<button id="cl">Borrar</button></div><div id="fb"></div>`);
- const upd=()=>{$("#sq").innerHTML=seq.map(f=>`<span class="frag">[${f}]</span>`).join("")};
- $("#cl").onclick=()=>{seq=[];upd()};
- document.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{if(seq.length<5)seq.push(b.dataset.f);upd();
-  if(seq.length==5){if(seq.every((f,i)=>f===FR[i]))end(true);else{errs++;$("#fb").innerHTML='<p style="color:var(--bad)"><b>Clave inválida.</b> Sigue el orden Alfa, Beta, Gamma, Delta, Omega.</p>';seq=[];setTimeout(upd,600)}}})}
-function end(win){state="end";const s=Math.max(0,Math.ceil((tEnd-Date.now())/1000));
- ov(win?`<h1>Sistema restaurado</h1><p>El firewall vuelve a estar activo. Resumen técnico:</p><p><b>1.</b> Z_eff = Z − S: las capas internas apantallan casi por completo.<br><b>2.</b> En un periodo, Z_eff crece de izquierda a derecha; en un grupo, crece hacia abajo al llenarse orbitales d y f.<br><b>3.</b> Radio y energía de ionización reflejan la Z_eff: Ni retiene más que Cu en el modelo de Slater.<br><b>4.</b> Mayor retención electrónica implica más nobleza: el oro exige agua regia en el e-waste.<br><b>5.</b> La contracción lantánida explica por qué Ag y Au tienen radios casi iguales.</p><p>Con estos criterios se reordenó la base de datos del centro de cómputo y se reactivó el reciclaje inteligente.</p><p class="mut">Tiempo restante: ${Math.floor(s/60)}:${String(s%60).padStart(2,"0")} · Errores: ${errs} · Pistas: ${hints}</p><button class="go" id="rs">Jugar de nuevo</button>`:`<h1 style="color:var(--bad)">Tiempo agotado</h1><p>El sistema colapsó antes de restaurar la clave. Repasa: Z_eff = Z − S, y los electrones d y f apantallan mal.</p><p class="mut">Fragmentos: ${got.length}/5 · Errores: ${errs}</p><button class="go" id="rs">Reintentar</button>`);
- $("#rs").onclick=begin}
-function begin(){reset();T.forEach(t=>t.done=false);got=[];errs=0;hints=0;inv=0;$("#intro").classList.remove("on");$("#md").classList.remove("on");tEnd=Date.now()+900000;state="play"}
-$("#start").onclick=begin;
-addEventListener("keydown",e=>{if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"," "].includes(e.key)&&state==="play")e.preventDefault();
- const k=e.key.length===1?e.key.toLowerCase():e.key;if(k==="e"||k===" "||k==="Enter")act();else keys[k]=true});
-addEventListener("keyup",e=>{keys[e.key.length===1?e.key.toLowerCase():e.key]=false});
-document.querySelectorAll("#dp button").forEach(b=>{const k=b.dataset.k;b.onpointerdown=e=>{e.preventDefault();keys[k]=true};b.onpointerup=b.onpointerleave=()=>keys[k]=false});
-$("#act").onpointerdown=e=>{e.preventDefault();act()};cv.onpointerdown=act;
-addEventListener("contextmenu",e=>e.preventDefault());
-reset();draw();hud();loop();
-</script></body></html>
+
+function drawPlayer(){
+  const {x, y, w, h} = player;
+  const pulse = 0.5 + 0.5 * Math.sin(Date.now()/250);
+  ctx.fillStyle = `rgba(0,240,255,${0.1 + pulse*0.1})`;
+  ctx.beginPath();
+  ctx.arc(x + w/2, y + h/2, 30, 0, Math.PI*2);
+  ctx.fill();
+
+  ctx.fillStyle = '#00f0ff';
+  ctx.fillRect(x, y, w, h);
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x, y, w, h);
+
+  ctx.fillStyle = '#050510';
+  const cx = x + w/2, cy = y + h/2;
+  const es = 5;
+  let e1x, e1y, e2x, e2y;
+  if(player.dir === 'up'){ e1x=cx-7; e1y=cy-6; e2x=cx+7; e2y=cy-6; }
+  else if(player.dir === 'down'){ e1x=cx-7; e1y=cy+4; e2x=cx+7; e2y=cy+4; }
+  else if(player.dir === 'left'){ e1x=cx-8; e1y=cy-4; e2x=cx-8; e2y=cy+4; }
+  else { e1x=cx+8; e1y=cy-4; e2x=cx+8; e2y=cy+4; }
+  ctx.fillRect(e1x - es/2, e1y - es/2, es, es);
+  ctx.fillRect(e2x - es/2, e2y - es/2, es, es);
+
+  if(nearObject){
+    const bx = nearObject.x + nearObject.w/2;
+    const by = nearObject.y - 22;
+    ctx.fillStyle = '#ffdd00';
+    ctx.font = 'bold 26px monospace';
+    ctx.textAlign = 'center';
+    const bob = Math.sin(Date.now()/200) * 3;
+    ctx.fillText('!', bx, by + bob);
+  }
+}
+
+/* ============ LOOP ============ */
+let last = performance.now();
+function loop(t){
+  const dt = Math.min((t - last)/1000, 0.05);
+  last = t;
+  if(gameActive) update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+
+/* ============ BLOQUEAR GESTOS MOLESTOS ============ */
+document.addEventListener('gesturestart', e=>e.preventDefault());
+document.addEventListener('contextmenu', e=>{
+  if(e.target.closest('#dpad, #actionBtn, #gameWrap')) e.preventDefault();
+});
+</script>
+</body>
+</html>
